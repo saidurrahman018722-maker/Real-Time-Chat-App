@@ -19,8 +19,8 @@ app.use(express.urlencoded({ extended: true }));
 const __dirname = path.resolve();
 
 app.use(sessionMiddleware);
-app.use('/auth',authRoutes)
-app.use('/message',messageRoutes)
+app.use('/auth/api',authRoutes)
+app.use('/message/api',messageRoutes)
 
 //after all the routes 
 if(process.env.NODE_ENV === 'production'){

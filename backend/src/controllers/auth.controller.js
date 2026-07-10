@@ -3,6 +3,7 @@ import {prisma} from '../config/db.js';
 import {redis} from '../config/redis.connect.js'
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import { generateOTP } from '../utils/opt.utils.js';
 import { sendOTPEmail, sendRegistrationWelcomeEmail} from '../services/email.service.js';
 
 
@@ -74,7 +75,7 @@ export const OtpVerification = async (req, res) => {
     // Update user status and delete the used OTP in a fast database transaction
     const [updatedUser] = await prisma.$transaction([
       prisma.user.update({
-        where: { id: userId },
+        where: { id: findOtp.userId },
         data: { verified: true },
       }),
       prisma.otp.delete({
@@ -139,6 +140,13 @@ export const login = async (req, res) => {
     const userSetKey = `user:sessions:${user.id}`;
     await redis.sadd(userSetKey, req.sessionID);
 
+    // FORCE EXPRESS TO SAVE TO REDIS BEFORE SENDING THE RESPONSE
+    req.session.save((err) => {
+      if (err) {
+        console.error("Session save error:", err);
+        return res.status(500).json({ error: "Failed to save session" });
+      }
+
     res.status(200).json({
         message:"user logged in successfully",
         data:{
@@ -147,9 +155,10 @@ export const login = async (req, res) => {
       email:user.email,
       verified:user.verified
         }
-    })     
-
-  } catch (error) {
+    })
+    })
+  }
+ catch (error) {
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
