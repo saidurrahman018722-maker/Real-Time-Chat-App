@@ -2,10 +2,9 @@ import express from "express";
 import { config } from "dotenv";
 import authRoutes from "../src/routes/auth.route.js";
 import messageRoutes from "../src/routes/message.route.js";
-import { connectDB,disconnectDB } from "./config/db.js";
-import {sessionMiddleware} from "../src/middlewares/session.middleware.js"
-import path from "path"
-
+import { sessionMiddleware } from "../src/middlewares/session.middleware.js";
+import path from "path";
+import { connectDB } from "./config/db.js";
 
 
 
@@ -19,8 +18,8 @@ app.use(express.urlencoded({ extended: true }));
 const __dirname = path.resolve();
 
 app.use(sessionMiddleware);
-app.use('/auth/api',authRoutes)
-app.use('/message/api',messageRoutes)
+app.use('/auth/api', authRoutes);
+app.use('/message/api', messageRoutes);
 
 //after all the routes 
 if(process.env.NODE_ENV === 'production'){

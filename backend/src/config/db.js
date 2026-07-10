@@ -2,31 +2,77 @@ import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 
+import { redis } from "./redis.connect.js";
+import crypto from "crypto";
+
 const connectionString = `${process.env.DATABASE_URL}`;
 
 const adapter = new PrismaPg({ connectionString });
-export const prisma = new PrismaClient({ adapter });
+const basePrisma = new PrismaClient({ adapter });
 
+export const prisma = basePrisma.$extends({
+  query: {
+    $allModels: {
+      async $allOperations({ model, operation, args, query }) {
+        const readOperations = ["findUnique", "findFirst", "findMany"];
+        if (!readOperations.includes(operation)) {
+          return query(args);
+        }
 
+        const argsString = JSON.stringify(args || {});
+        const hash = crypto
+          .createHash("sha256")
+          .update(argsString)
+          .digest("hex");
+        const cacheKey = `prisma_cache:${model}:${operation}:${hash}`;
 
-export const connectDB  = async ()=>{
-    try {
-        await prisma.$connect()
-        console.log("the database connected.")
+        try {
+          const cachedResult = await redis.get(cacheKey);
+          if (cachedResult) {
+            return JSON.parse(cachedResult, (key, value) => {
+              if (
+                typeof value === "string" &&
+                /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value)
+              ) {
+                return new Date(value);
+              }
+              return value;
+            });
+          }
+        } catch (err) {
+          console.error("Redis Cache GET Error:", err);
+        }
+        const result = await query(args);
+        try {
+          if (result) {
+            await redis.setex(cacheKey, 60, JSON.stringify(result));
+          }
+        } catch (err) {
+          console.error("Redis Cache SET Error:", err);
+        }
 
-    } catch (error) {
-        console.error(error)
-        process.exit(1)
-    }
-}
+        return result;
+      },
+    },
+  },
+});
 
-export const disconnectDB  = async ()=>{
-    try {
-        await prisma.$disconnect()
-        console.log("the database disconnected.")
-        process.exit(1)
+export const connectDB = async () => {
+  try {
+    await prisma.$connect();
+    console.log("the database connected.");
+  } catch (error) {
+    console.error(error);
+    process.exit(1);
+  }
+};
 
-    } catch (error) {
-        console.error(error)
-    }
-}
+export const disconnectDB = async () => {
+  try {
+    await prisma.$disconnect();
+    console.log("the database disconnected.");
+    process.exit(1);
+  } catch (error) {
+    console.error(error);
+  }
+};
