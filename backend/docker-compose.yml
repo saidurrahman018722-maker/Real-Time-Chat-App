@@ -1,0 +1,13 @@
+services:
+  redis-session:
+    image: redis:7-alpine
+    container_name: express_redis_session
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
+
+volumes:
+  redis_data:

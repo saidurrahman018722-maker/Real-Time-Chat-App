@@ -1,11 +1,15 @@
-import express from "express";
+import { Router } from 'express';
+import { login, getDevices, revokeDevice, logout } from "../controllers/auth.controller.js"
+import { validateRequest } from '../middlewares/validateRequest.js';
+import { loginSchema, registrationSchema, optSchema} from '../validators/auth.validators.js';
+import { OtpVerification, UserRegistration } from '../controllers/auth.controller.js';
 
-
-const router = express.Router();
-
-router.post("/api/register",register)
-router.post("api/login",login)
-router.post("api/logout",logout)
-router.get("api/profile",profile)
+const router = Router();
+router.post("/register",validateRequest(registrationSchema),UserRegistration)
+router.post('/opt-verification',validateRequest(optSchema), OtpVerification)
+router.post('/login',validateRequest(loginSchema), login);
+router.get('/devices', getDevices);
+router.delete('/devices/:id', revokeDevice);
+router.post('/logout', logout);
 
 export default router;

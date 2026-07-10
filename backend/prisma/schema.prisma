@@ -4,9 +4,39 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+enum OtpType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+  TWO_FACTOR_AUTH
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  opts Otp[]
+}
+
+model Otp {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      OtpType  @default(EMAIL_VERIFICATION)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([userId])
 }
