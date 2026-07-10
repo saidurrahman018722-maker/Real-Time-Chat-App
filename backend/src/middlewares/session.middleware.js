@@ -5,11 +5,6 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// ==========================================
-// THE FIX: IOREDIS PROXY ADAPTER
-// ==========================================
-// This sits between connect-redis and ioredis. It passes everything through normally,
-// but intercepts the 'set' command to fix the formatting bug before it hits the database.
 const redisClientAdapter = new Proxy(redis, {
   get(target, prop) {
     if (prop === 'set') {
