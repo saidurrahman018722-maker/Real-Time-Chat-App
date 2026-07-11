@@ -117,27 +117,51 @@ export const OtpVerification = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    const lockoutKey = `lockout:${email}`;
+    const failedAttempts = await redis.get(lockoutKey);
+
+    if (failedAttempts && parseInt(failedAttempts) >= 15) {
+      return res.status(423).json({
+        message: "Account locked due to too many failed login attempts. Please communicate with customer support.",
+      });
+    }
+
+    const handleFailedAttempt = async () => {
+      const attempts = await redis.incr(lockoutKey);
+      if (attempts === 1) {
+        // Set expiry for 15 minutes (900 seconds)
+        await redis.expire(lockoutKey, 900);
+      }
+      return res.status(401).json({
+        message: "Invalid Email or Password",
+      });
+    };
+
     const user = await prisma.user.findUnique({
       where: {
         email,
       },
     });
+
     if (!user) {
-      return res.status(401).json({
-        message: "Invalid Email or Password",
-      });
+      return await handleFailedAttempt();
     }
+
     if (user.verified === false) {
       return res.status(401).json({
         message: "user not verified Please verify the email first.",
       });
     }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({
-        message: "Invalid Email or Password",
-      });
+      return await handleFailedAttempt();
     }
+
+    // Successful login: clear lockout attempts
+    await redis.del(lockoutKey);
+
     req.session.userId = user.id;
     req.session.userAgent = req.headers["user-agent"] || "Unknown Device";
     req.session.ipAddress = req.ip || "Unknown IP";
