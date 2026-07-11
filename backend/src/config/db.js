@@ -16,6 +16,15 @@ export const prisma = basePrisma.$extends({
       async $allOperations({ model, operation, args, query }) {
         const readOperations = ["findUnique", "findFirst", "findMany"];
         if (!readOperations.includes(operation)) {
+          // Invalidate cache for this model on any write operation
+          try {
+            const keys = await redis.keys(`prisma_cache:${model}:*`);
+            if (keys.length > 0) {
+              await redis.del(...keys);
+            }
+          } catch (err) {
+            console.error("Redis Cache Invalidation Error:", err);
+          }
           return query(args);
         }
 

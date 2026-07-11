@@ -18,13 +18,18 @@ enum OtpType {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  verified  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String    @id @default(uuid())
+  name              String
+  email             String    @unique
+  password          String
+  verified          Boolean   @default(false)
+  profilePic        String?
+  verifyToken       String?   @unique
+  verifyTokenExpiry DateTime?
+  resetToken        String?   @unique
+  resetTokenExpiry  DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   opts Otp[]
 }

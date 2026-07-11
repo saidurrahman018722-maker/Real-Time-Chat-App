@@ -7,7 +7,9 @@ import { generateOTP } from "../utils/opt.utils.js";
 import {
   sendOTPEmail,
   sendRegistrationWelcomeEmail,
+  sendVerificationLinkEmail,
 } from "../services/email.service.js";
+import cloudinary from "../utils/cloudinary.js";
 
 export const UserRegistration = async (req, res) => {
   try {
@@ -34,6 +36,7 @@ export const UserRegistration = async (req, res) => {
     });
 
     await sendRegistrationWelcomeEmail(user.email, user.name);
+
     const otp = generateOTP();
     await sendOTPEmail(user.email, user.name, otp);
 
@@ -77,7 +80,6 @@ export const OtpVerification = async (req, res) => {
       return res.status(401).json({ message: "OTP expired" });
     }
 
-    // Update user status and delete the used OTP in a fast database transaction
     const [updatedUser] = await prisma.$transaction([
       prisma.user.update({
         where: { id: findOtp.userId },
@@ -234,4 +236,155 @@ export const logout = async (req, res) => {
     res.clearCookie("sessionId");
     return res.json({ message: "Logged out successfully" });
   });
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    // 1. Validate the request body using Zod
+    const { name, profilePic, email } = req.body;
+    const userId = req.session.userId;
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    let updateData = {};
+    if (name) {
+      updateData.name = name;
+    }
+    let requireNewVerification = false;
+
+    if (email && email !== user.email) {
+      const existingEmail = await prisma.user.findUnique({ where: { email } });
+      if (existingEmail) {
+        return res
+          .status(400)
+          .json({ message: "This email is already in use." });
+      }
+      updateData.email = email;
+      updateData.verified = false;
+      requireNewVerification = true;
+    }
+    if (profilePic) {
+      const cloudResponse = await cloudinary.uploader.upload(profilePic);
+      updateData.profilePic = cloudResponse.secure_url;
+    }
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ message: "No data provided to update." });
+    }
+
+    let updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+    });
+    let verifyToken;
+    if (requireNewVerification) {
+      verifyToken = crypto.randomBytes(32).toString("hex");
+      const hashedToken = crypto
+        .createHash("sha256")
+        .update(verifyToken)
+        .digest("hex");
+      const verifyTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+      updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          verifyToken: hashedToken,
+          verifyTokenExpiry: verifyTokenExpiry,
+        },
+      });
+
+      const backendUrl =
+        process.env.BACKEND_URL ||
+        `http://localhost:${process.env.PORT || 3000}`;
+      const verificationUrl = `${backendUrl}/api/auth/verify-email/${verifyToken}`;
+
+      await sendVerificationLinkEmail(
+        updatedUser.email,
+        updatedUser.name,
+        verificationUrl
+      );
+    }
+
+    return res.status(200).json({
+      message: requireNewVerification
+        ? "Profile updated. Please verify your new email address to continue."
+        : "Profile updated successfully",
+      user: updateData,
+      data: { verifyToken },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message:
+        "Something went wrong while uploading your porfile... Please try again later",
+      error: error.message,
+    });
+  }
+};
+
+export const getUser = async (req, res) => {
+  const userId = req.session.userId;
+  const user = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+  });
+  return res.status(200).json({
+    success: true,
+    message: "user logged in successfully",
+    data: {
+      id: userId,
+      name: user.name,
+      email: user.email,
+      verified: user.verified,
+    },
+  });
+};
+
+export const verifyEmailToken = async (req, res) => {
+  try {
+    const { token } = req.params;
+    if (!token) {
+      return res.status(400).json({ success: false, message: "Token is required" });
+    }
+
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    const user = await prisma.user.findUnique({
+      where: {
+        verifyToken: hashedToken,
+      },
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: "Invalid or expired token" });
+    }
+
+    if (
+      user.verifyTokenExpiry &&
+      Date.now() > new Date(user.verifyTokenExpiry).getTime()
+    ) {
+      return res.status(400).json({ success: false, message: "Token has expired" });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        verified: true,
+        verifyToken: null,
+        verifyTokenExpiry: null,
+      },
+    });
+
+    req.session.userId = updatedUser.id;
+    req.session.userAgent = req.headers["user-agent"] || "Unknown Device";
+    req.session.ipAddress = req.ip || "Unknown IP";
+    req.session.loginAt = new Date().toISOString();
+
+    const userSetKey = `user:sessions:${updatedUser.id}`;
+    await redis.sadd(userSetKey, req.sessionID);
+
+    return res.status(200).json({ success: true, message: "Email verified successfully" });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
 };
