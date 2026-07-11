@@ -5,8 +5,6 @@ import { config } from "dotenv";
 import authRoutes from "../src/routes/auth.route.js";
 import messageRoutes from "../src/routes/message.route.js";
 import { sessionMiddleware } from "../src/middlewares/session.middleware.js";
-import { shieldMiddleware } from "../src/middlewares/shield.middleware.js";
-import { botDetectionMiddleware } from "../src/middlewares/botDetection.middleware.js";
 import path from "path";
 import { connectDB } from "./config/db.js";
 
@@ -28,9 +26,6 @@ app.use(cors({
     origin: process.env.FRONTEND_URL || 'http://localhost:5173',
     credentials: true,
 }));
-
-app.use(botDetectionMiddleware);
-app.use(shieldMiddleware);
 
 app.use(sessionMiddleware);
 app.use('/auth/api', authRoutes);
