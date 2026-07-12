@@ -30,7 +30,19 @@ export const getMessageByUserId = async (req, res) => {
       orderBy: { createdAt: "asc" },
     });
 
-    return res.status(200).json({ success: true, data: messages });
+    // Map through messages to apply WhatsApp-style "This message was deleted" tombstone
+    const formattedMessages = messages.map(msg => {
+      if (msg.isDeletedForEveryone) {
+        return {
+          ...msg,
+          text: "🚫 This message was deleted",
+          image: null
+        };
+      }
+      return msg;
+    });
+
+    return res.status(200).json({ success: true, data: formattedMessages });
   } catch (error) {
     console.error("Error in getMessageByUserId: ", error.message);
     return res.status(500).json({ error: "Internal server error" });
@@ -128,10 +140,12 @@ export const deleteMessage = async (req, res) => {
       
       await prisma.message.update({
         where: { id },
-        data: { isDeletedForEveryone: true }
+        data: { 
+          isDeletedForEveryone: true,
+          text: null, // Clear the content from DB for privacy
+          image: null
+        }
       });
-      // Optionally could replace text with "This message was deleted"
-      
     } else {
       // Delete for me
       await prisma.message.update({
