@@ -20,6 +20,7 @@ import {
 import {
   strictLimiter,
   standardLimiter,
+  costlyLimiter,
 } from "../middlewares/rateLimiter.middleware.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 
@@ -33,15 +34,21 @@ router.post(
   validateRequest(registrationSchema),
   UserRegistration
 );
-router.post("/opt-verification", validateRequest(optSchema), OtpVerification);
-router.get("/verify-email/:token", verifyEmailToken);
+router.post(
+  "/opt-verification",
+  standardLimiter,
+  validateRequest(optSchema),
+  OtpVerification
+);
+router.get("/verify-email/:token", standardLimiter, verifyEmailToken);
 router.post("/login", strictLimiter, validateRequest(loginSchema), login);
-router.get("/devices", getDevices);
-router.delete("/devices/:id", revokeDevice);
-router.post("/logout", logout);
+router.get("/devices", strictLimiter, authMiddleware, getDevices);
+router.delete("/devices/:id", costlyLimiter, authMiddleware, revokeDevice);
+router.post("/logout", authMiddleware, logout);
 
 router.post(
   "/update-profile",
+  costlyLimiter,
   authMiddleware,
   validateRequest(updateProfileSchema),
   updateProfile

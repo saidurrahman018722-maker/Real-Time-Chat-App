@@ -53,7 +53,6 @@ export const sendOTPEmail = async (userEmail, userName, otp) => {
       // Plain text fallback for old/restrictive email clients
       text: `Hi ${userName},\n\nThank you for registering with SHOPNEST. Your One-Time Password (OTP) is: ${otp}\n\nThis code is valid for 5 minutes.\n\nBest,\nSHOPNEST Team`,
 
-      // Passing your modular HTML function here
       html: otpMessage(otp),
     });
 

@@ -37,7 +37,6 @@ const TOKEN_BUCKET_LUA_SCRIPT = `
   return { allowed and 1 or 0, new_tokens }
 `;
 
-// Define the Redis command so we don't have to reload it every time
 redis.defineCommand("tokenBucket", {
   numberOfKeys: 2,
   lua: TOKEN_BUCKET_LUA_SCRIPT,
@@ -81,7 +80,6 @@ export const rateLimiter = (options = {}) => {
       next();
     } catch (error) {
       console.error(`Rate Limiter Error (${prefix}):`, error);
-      // Fail open: if redis crashes, don't take down the app
       next();
     }
   };

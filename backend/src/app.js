@@ -2,6 +2,8 @@ import express from "express";
 import { config } from "dotenv";
 import authRoutes from "../src/routes/auth.route.js";
 import messageRoutes from "../src/routes/message.route.js";
+import contactRoutes from "../src/routes/contact.route.js";
+import conversationRoutes from "../src/routes/conversation.route.js";
 import { sessionMiddleware } from "../src/middlewares/session.middleware.js";
 import path from "path";
 import { connectDB } from "./config/db.js";
@@ -20,6 +22,8 @@ const __dirname = path.resolve();
 app.use(sessionMiddleware);
 app.use('/auth/api', authRoutes);
 app.use('/message/api', messageRoutes);
+app.use('/contact/api', contactRoutes);
+app.use('/conversation/api', conversationRoutes);
 
 //after all the routes 
 if(process.env.NODE_ENV === 'production'){

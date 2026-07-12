@@ -31,7 +31,13 @@ model User {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
-  opts Otp[]
+  opts             Otp[]
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  
+  conversations    Conversation[] @relation("UserConversations")
+  contacts         Contact[]      @relation("ContactOwner")
+  savedAsContact   Contact[]      @relation("ContactUser")
 }
 
 model Otp {
@@ -44,4 +50,52 @@ model Otp {
   expiresAt DateTime
 
   @@index([userId])
+}
+
+model Conversation {
+  id            String    @id @default(uuid())
+  participants  User[]    @relation("UserConversations")
+  messages      Message[]
+  lastMessageId String?
+  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime  @default(now())
+  
+  deletedBy     String[]  @default([])
+}
+
+model Contact {
+  id        String   @id @default(uuid())
+  ownerId   String
+  owner     User     @relation("ContactOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation("ContactUser", fields: [userId], references: [id], onDelete: Cascade)
+  alias     String?
+  createdAt DateTime @default(now())
+
+  @@unique([ownerId, userId])
+}
+
+model Message {
+  id         String @id @default(uuid())
+  senderId   String
+  receiverId String
+  
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  text  String?
+  image String?
+  
+  isDeletedForEveryone Boolean  @default(false)
+  deletedBy            String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sender   User @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+
+  @@index([senderId, receiverId])
+  @@index([receiverId])
+  @@index([conversationId])
 }
