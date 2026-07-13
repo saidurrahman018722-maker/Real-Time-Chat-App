@@ -10,6 +10,7 @@ import { sessionMiddleware } from './src/middlewares/session.middleware.js';
 import authRoutes from './src/routes/auth.route.js';
 
 const app = express();
+app.set('trust proxy', 1); // Trust the API Gateway to pass X-Forwarded-For
 
 // Middleware
 app.use(cors({ origin: 'http://localhost:5173', credentials: true }));

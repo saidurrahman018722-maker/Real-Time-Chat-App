@@ -16,8 +16,11 @@ function App() {
 
   if (isCheckingAuth) {
     return (
-      <div className="flex items-center justify-center h-screen bg-base-100">
-        <Loader2 className="animate-spin text-primary" size={48} />
+      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 bg-base-100">
+        <div className="relative">
+          <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse"></div>
+          <Loader2 className="animate-spin text-primary relative z-10" size={56} strokeWidth={2} />
+        </div>
       </div>
     );
   }

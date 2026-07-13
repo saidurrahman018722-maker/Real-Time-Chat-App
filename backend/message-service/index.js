@@ -13,6 +13,8 @@ import { sessionMiddleware } from './src/middlewares/session.middleware.js';
 import messageRoutes from './src/routes/message.route.js';
 
 const app = express();
+app.set('trust proxy', 1); // Trust the API Gateway to pass X-Forwarded-For
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: 'http://localhost:5173', credentials: true }

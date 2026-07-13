@@ -1,6 +1,6 @@
-const { Kafka } = require('kafkajs');
+import { Kafka } from 'kafkajs';
 
-const kafka = new Kafka({
+export const kafka = new Kafka({
   clientId: process.env.KAFKA_CLIENT_ID || 'chatapp-client',
   brokers: (process.env.KAFKA_BROKERS || 'localhost:29092,localhost:29093,localhost:29094').split(','),
   retry: {
@@ -9,9 +9,9 @@ const kafka = new Kafka({
   }
 });
 
-const producer = kafka.producer();
+export const producer = kafka.producer();
 
-const connectProducer = async () => {
+export const connectProducer = async () => {
   try {
     await producer.connect();
     console.log('Kafka Producer connected successfully');
@@ -20,11 +20,11 @@ const connectProducer = async () => {
   }
 };
 
-const disconnectProducer = async () => {
+export const disconnectProducer = async () => {
   await producer.disconnect();
 };
 
-const publishEvent = async (topic, eventName, payload) => {
+export const publishEvent = async (topic, eventName, payload) => {
   try {
     await producer.send({
       topic,
@@ -41,15 +41,6 @@ const publishEvent = async (topic, eventName, payload) => {
 };
 
 // Consumers will be instantiated by individual services
-const createConsumer = (groupId) => {
+export const createConsumer = (groupId) => {
   return kafka.consumer({ groupId });
-};
-
-module.exports = {
-  kafka,
-  producer,
-  connectProducer,
-  disconnectProducer,
-  publishEvent,
-  createConsumer
 };

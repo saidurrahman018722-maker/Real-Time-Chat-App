@@ -1,49 +1,28 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const { createProxyMiddleware } = require('http-proxy-middleware');
-const rateLimit = require('express-rate-limit');
-const RedisStore = require('rate-limit-redis');
-const redisClient = require('../shared/redis');
-const jwt = require('jsonwebtoken');
+import dotenv from 'dotenv';
+dotenv.config();
+import express from 'express';
+import cors from 'cors';
+import { createProxyMiddleware } from 'http-proxy-middleware';
+import rateLimit from 'express-rate-limit';
+import rateLimitRedis from 'rate-limit-redis';
+const { RedisStore } = rateLimitRedis;
+import redisClient from '../shared/redis.js';
+import jwt from 'jsonwebtoken';
+import { standardLimiter } from '../shared/rateLimiter.js';
 
 const app = express();
 
 app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
 
-// Global Rate Limiting across all API routes via Redis Cluster
-const globalLimiter = rateLimit({
-  store: new RedisStore({
-    sendCommand: (...args) => redisClient.call(...args),
-  }),
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 200, // Limit each IP to 200 requests per `window` (1 minute)
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: 'Too many requests from this IP, please try again later.',
-});
-app.use(globalLimiter);
+// Trust the proxy (so we get the real client IP instead of the proxy's IP)
+app.set('trust proxy', 1);
 
-// Authentication Middleware to protect routes that require it
-const authenticateJWT = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (authHeader) {
-    const token = authHeader.split(' ')[1];
-    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-      if (err) {
-        return res.sendStatus(403);
-      }
-      req.user = decoded;
-      // We pass the decoded user ID to the downstream services via custom header
-      req.headers['x-user-id'] = decoded.id;
-      next();
-    });
-  } else {
-    res.sendStatus(401);
-  }
-};
+// Global Standard Rate Limiter using Lua Token Bucket
+app.use(standardLimiter);
 
 // --- PROXIES ---
+// The API Gateway simply proxies the requests and passes the cookies.
+// Authentication (Session/Redis) is handled internally by each microservice via their authMiddleware.
 
 // Auth Service proxy (Public routes)
 app.use('/auth', createProxyMiddleware({
@@ -54,8 +33,8 @@ app.use('/auth', createProxyMiddleware({
   },
 }));
 
-// Contact Service proxy (Protected)
-app.use('/contact', authenticateJWT, createProxyMiddleware({
+// Contact Service proxy (Protected inside microservice)
+app.use('/contact', createProxyMiddleware({
   target: process.env.CONTACT_SERVICE_URL,
   changeOrigin: true,
   pathRewrite: {
@@ -63,8 +42,8 @@ app.use('/contact', authenticateJWT, createProxyMiddleware({
   },
 }));
 
-// Conversation Service proxy (Protected)
-app.use('/conversation', authenticateJWT, createProxyMiddleware({
+// Conversation Service proxy (Protected inside microservice)
+app.use('/conversation', createProxyMiddleware({
   target: process.env.CONVERSATION_SERVICE_URL,
   changeOrigin: true,
   pathRewrite: {
@@ -72,8 +51,8 @@ app.use('/conversation', authenticateJWT, createProxyMiddleware({
   },
 }));
 
-// Message Service proxy (Protected, supports WebSockets if needed)
-app.use('/message', authenticateJWT, createProxyMiddleware({
+// Message Service proxy (Protected inside microservice, supports WebSockets)
+app.use('/message', createProxyMiddleware({
   target: process.env.MESSAGE_SERVICE_URL,
   changeOrigin: true,
   ws: true, // Enable WebSocket proxy for Socket.io

@@ -11,6 +11,8 @@ import { sessionMiddleware } from './src/middlewares/session.middleware.js';
 import contactRoutes from './src/routes/contact.route.js';
 
 const app = express();
+app.set('trust proxy', 1); // Trust the API Gateway to pass X-Forwarded-For
+
 const prisma = new PrismaClient();
 
 app.use(cors({ origin: 'http://localhost:5173', credentials: true }));

@@ -8,7 +8,7 @@ export const useAuthStore = create((set) => ({
 
   checkAuth: async () => {
     try {
-      const res = await axiosInstance.get('/auth/api/getuser');
+      const res = await axiosInstance.get('/auth/check');
       set({ authUser: res.data.data });
     } catch (error) {
       console.log('Error in checkAuth:', error);
@@ -21,7 +21,7 @@ export const useAuthStore = create((set) => ({
   login: async (email, password) => {
     set({ isLoggingIn: true });
     try {
-      const res = await axiosInstance.post('/auth/api/login', { email, password });
+      const res = await axiosInstance.post('/auth/login', { email, password });
       set({ authUser: res.data.data });
       return { success: true };
     } catch (error) {
@@ -34,7 +34,7 @@ export const useAuthStore = create((set) => ({
 
   logout: async () => {
     try {
-      await axiosInstance.post('/auth/api/logout');
+      await axiosInstance.post('/auth/logout');
       set({ authUser: null });
     } catch (error) {
       console.log('Error in logout:', error);
