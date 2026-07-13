@@ -2,12 +2,16 @@ import { useState } from 'react';
 import { MessageSquare, Mail, Lock, Loader2, User, ArrowRight } from 'lucide-react';
 import { axiosInstance } from '../lib/axios';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../store/useAuthStore';
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isOtpSent, setIsOtpSent] = useState(false);
+  const [otp, setOtp] = useState('');
+  const { checkAuth } = useAuthStore();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -18,10 +22,27 @@ const RegisterPage = () => {
     setIsLoading(true);
     try {
       await axiosInstance.post('/auth/register', formData);
-      setSuccess('Registration successful! Redirecting to login...');
-      setTimeout(() => navigate('/login'), 2000);
+      setSuccess('Registration successful! Please check your email for the OTP.');
+      setIsOtpSent(true);
+      setTimeout(() => setSuccess(''), 5000);
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOtpSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setIsLoading(true);
+    try {
+      await axiosInstance.post('/auth/opt-verification', { otp });
+      setSuccess('OTP verified! Logging you in...');
+      await checkAuth(); // Updates auth state and navigates automatically based on App.jsx routes
+    } catch (err) {
+      setError(err.response?.data?.message || 'Invalid OTP');
     } finally {
       setIsLoading(false);
     }
@@ -57,73 +78,115 @@ const RegisterPage = () => {
               </div>
             )}
 
-            <div className="form-control group">
-              <label className="label pb-1"><span className="label-text font-semibold text-white/90 group-focus-within:text-white transition-colors">Full Name</span></label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/50 group-focus-within:text-white transition-colors">
-                  <User size={18} />
+            {isOtpSent ? (
+              <div className="flex flex-col gap-4">
+                <div className="form-control group">
+                  <label className="label pb-1"><span className="label-text font-semibold text-white/90 group-focus-within:text-white transition-colors">Enter OTP</span></label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/50 group-focus-within:text-white transition-colors">
+                      <Lock size={18} />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="123456"
+                      className="input input-bordered w-full pl-11 bg-base-300/40 text-white placeholder:text-white/40 focus:bg-base-300/60 focus:ring-2 ring-white/50 border-white/20 transition-all rounded-xl text-center tracking-widest text-lg font-bold"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      required
+                      maxLength={6}
+                    />
+                  </div>
                 </div>
-                <input
-                  type="text"
-                  placeholder="John Doe"
-                  className="input input-bordered w-full pl-11 bg-base-300/40 text-white placeholder:text-white/40 focus:bg-base-300/60 focus:ring-2 ring-white/50 border-white/20 transition-all rounded-xl"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </div>
-            </div>
 
-            <div className="form-control group">
-              <label className="label pb-1"><span className="label-text font-semibold text-white/90 group-focus-within:text-white transition-colors">Email Address</span></label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/50 group-focus-within:text-white transition-colors">
-                  <Mail size={18} />
+                <button 
+                  type="button" 
+                  onClick={handleOtpSubmit}
+                  className="btn w-full mt-4 rounded-xl hover:-translate-y-1 shadow-xl shadow-pink-500/30 transition-all duration-300 font-bold text-lg border-none bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 text-white" 
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="animate-spin" size={20} />
+                      Verifying...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      Verify OTP <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                    </span>
+                  )}
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="form-control group">
+                  <label className="label pb-1"><span className="label-text font-semibold text-white/90 group-focus-within:text-white transition-colors">Full Name</span></label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/50 group-focus-within:text-white transition-colors">
+                      <User size={18} />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="John Doe"
+                      className="input input-bordered w-full pl-11 bg-base-300/40 text-white placeholder:text-white/40 focus:bg-base-300/60 focus:ring-2 ring-white/50 border-white/20 transition-all rounded-xl"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      required
+                    />
+                  </div>
                 </div>
-                <input
-                  type="email"
-                  placeholder="you@example.com"
-                  className="input input-bordered w-full pl-11 bg-base-300/40 text-white placeholder:text-white/40 focus:bg-base-300/60 focus:ring-2 ring-white/50 border-white/20 transition-all rounded-xl"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
-                />
-              </div>
-            </div>
 
-            <div className="form-control group">
-              <label className="label pb-1"><span className="label-text font-semibold text-white/90 group-focus-within:text-white transition-colors">Password</span></label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/50 group-focus-within:text-white transition-colors">
-                  <Lock size={18} />
+                <div className="form-control group">
+                  <label className="label pb-1"><span className="label-text font-semibold text-white/90 group-focus-within:text-white transition-colors">Email Address</span></label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/50 group-focus-within:text-white transition-colors">
+                      <Mail size={18} />
+                    </div>
+                    <input
+                      type="email"
+                      placeholder="you@example.com"
+                      className="input input-bordered w-full pl-11 bg-base-300/40 text-white placeholder:text-white/40 focus:bg-base-300/60 focus:ring-2 ring-white/50 border-white/20 transition-all rounded-xl"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      required
+                    />
+                  </div>
                 </div>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  className="input input-bordered w-full pl-11 bg-base-300/40 text-white placeholder:text-white/40 focus:bg-base-300/60 focus:ring-2 ring-white/50 border-white/20 transition-all rounded-xl"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  required
-                />
-              </div>
-            </div>
 
-            <button 
-              type="submit" 
-              className="btn w-full mt-4 rounded-xl hover:-translate-y-1 shadow-xl shadow-pink-500/30 transition-all duration-300 font-bold text-lg border-none bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 text-white" 
-              disabled={isLoading || !!success}
-            >
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="animate-spin" size={20} />
-                  Creating account...
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  Sign Up <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                </span>
-              )}
-            </button>
+                <div className="form-control group">
+                  <label className="label pb-1"><span className="label-text font-semibold text-white/90 group-focus-within:text-white transition-colors">Password</span></label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/50 group-focus-within:text-white transition-colors">
+                      <Lock size={18} />
+                    </div>
+                    <input
+                      type="password"
+                      placeholder="••••••••"
+                      className="input input-bordered w-full pl-11 bg-base-300/40 text-white placeholder:text-white/40 focus:bg-base-300/60 focus:ring-2 ring-white/50 border-white/20 transition-all rounded-xl"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <button 
+                  type="submit" 
+                  className="btn w-full mt-4 rounded-xl hover:-translate-y-1 shadow-xl shadow-pink-500/30 transition-all duration-300 font-bold text-lg border-none bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 text-white" 
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="animate-spin" size={20} />
+                      Creating account...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      Sign Up <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                    </span>
+                  )}
+                </button>
+              </>
+            )}
           </form>
 
           <div className="divider mt-6 text-base-content/40 text-sm">Already a member?</div>

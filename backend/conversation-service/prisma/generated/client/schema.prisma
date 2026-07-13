@@ -1,0 +1,27 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id         String  @id
+  name       String
+  email      String  @unique
+  profilePic String?
+
+  conversations Conversation[] @relation("UserConversations")
+}
+
+model Conversation {
+  id            String   @id @default(uuid())
+  participants  User[]   @relation("UserConversations")
+  lastMessageId String?
+  updatedAt     DateTime @updatedAt
+  createdAt     DateTime @default(now())
+
+  deletedBy String[] @default([])
+}

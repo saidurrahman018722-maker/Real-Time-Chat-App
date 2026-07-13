@@ -3,8 +3,8 @@ dotenv.config();
 
 import express from 'express';
 import cors from 'cors';
-import { PrismaClient } from '@prisma/client';
-import { createConsumer } from '../shared/kafka.js';
+import { prisma } from './src/config/db.js';
+import { createConsumer, initKafkaTopics } from '../shared/kafka.js';
 import { sessionMiddleware } from './src/middlewares/session.middleware.js';
 
 // Import our isolated routes
@@ -13,7 +13,7 @@ import conversationRoutes from './src/routes/conversation.route.js';
 const app = express();
 app.set('trust proxy', 1); // Trust the API Gateway to pass X-Forwarded-For
 
-const prisma = new PrismaClient();
+// Prisma is imported from config/db.js
 
 app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
 app.use(express.json());
@@ -21,6 +21,7 @@ app.use(sessionMiddleware);
 
 // Kafka Consumer for Data Replication
 const runKafkaConsumer = async () => {
+  await initKafkaTopics(['user-events', 'message-events', 'contact-events']);
   const consumer = createConsumer('conversation-service-group');
   await consumer.connect();
   await consumer.subscribe({ topic: 'user-events', fromBeginning: true });

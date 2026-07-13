@@ -72,7 +72,8 @@ export const UserRegistration = async (req, res) => {
       userId: user.id,
     });
   } catch (error) {
-    return res.status(500).json({ error: "Internal server error" });
+    console.error("Registration Error:", error);
+    return res.status(500).json({ error: "Internal server error", details: error.message });
   }
 };
 

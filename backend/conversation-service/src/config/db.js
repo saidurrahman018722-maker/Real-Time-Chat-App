@@ -1,13 +1,14 @@
 import "dotenv/config";
+
+import pg from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../../prisma/generated/client/index.js";
 
 import { redis } from "./redis.connect.js";
 import crypto from "crypto";
 
-const connectionString = `${process.env.DATABASE_URL}`;
-
-const adapter = new PrismaPg({ connectionString });
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
 const basePrisma = new PrismaClient({ adapter });
 
 export const prisma = basePrisma.$extends({

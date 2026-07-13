@@ -5,8 +5,8 @@ import express from 'express';
 import cors from 'cors';
 import http from 'http';
 import { Server } from 'socket.io';
-import { PrismaClient } from '@prisma/client';
-import { createConsumer, publishEvent } from '../shared/kafka.js';
+import { prisma } from './src/config/db.js';
+import { createConsumer, publishEvent, initKafkaTopics } from '../shared/kafka.js';
 import { sessionMiddleware } from './src/middlewares/session.middleware.js';
 
 // Import our isolated routes
@@ -20,28 +20,44 @@ const io = new Server(server, {
   cors: { origin: 'http://localhost:5173', credentials: true }
 });
 
-const prisma = new PrismaClient();
+// Prisma is imported from config/db.js
 
 app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
 app.use(express.json());
-app.use(sessionMiddleware);
+app.use(sessionMiddleware); // Required to extract session data from cookies for REST routes
 
 // Socket.io for Real-Time Messages
 const userSockets = new Map();
 
-io.on('connection', (socket) => {
-  const userId = socket.handshake.query.userId;
-  if (userId) {
-    userSockets.set(userId, socket.id);
-  }
-
-  socket.on('disconnect', () => {
-    if (userId) userSockets.delete(userId);
+// Middleware to extract session for WebSocket connections
+io.use((socket, next) => {
+  const req = socket.request;
+  const res = {}; // Mock res
+  sessionMiddleware(req, res, () => {
+    if (req.session && req.session.userId) {
+      socket.userId = req.session.userId;
+      next();
+    } else {
+      next(new Error('Authentication error'));
+    }
   });
 });
 
-// Kafka Consumer for Data Replication (User and Conversation)
+io.on('connection', (socket) => {
+  if (socket.userId) {
+    userSockets.set(socket.userId, socket.id);
+  }
+
+  socket.on('disconnect', () => {
+    if (socket.userId) {
+      userSockets.delete(socket.userId);
+    }
+  });
+});
+
+// Kafka Consumer for Data Replication
 const runKafkaConsumer = async () => {
+  await initKafkaTopics(['user-events', 'message-events', 'contact-events']);
   const consumer = createConsumer('message-service-group');
   await consumer.connect();
   await consumer.subscribe({ topic: 'user-events', fromBeginning: true });

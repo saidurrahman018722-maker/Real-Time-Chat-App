@@ -3,7 +3,7 @@ dotenv.config();
 
 import express from 'express';
 import cors from 'cors';
-import { publishEvent } from '../shared/kafka.js';
+import { connectProducer } from '../shared/kafka.js';
 import { sessionMiddleware } from './src/middlewares/session.middleware.js';
 
 // Import our isolated routes
@@ -26,6 +26,7 @@ app.get('/health', (req, res) => res.status(200).json({ status: 'Auth Service OK
 app.use('/', authRoutes);
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
+  await connectProducer();
   console.log(`Auth Service running on port ${PORT}`);
 });
