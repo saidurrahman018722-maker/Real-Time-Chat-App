@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon src/app.js",
-    "start": "node src/app.js"
+    "start": "node src/app.js",
+    "start:microservices": "concurrently \"cd api-gateway && nodemon index.js\" \"cd auth-service && nodemon index.js\" \"cd contact-service && nodemon index.js\" \"cd conversation-service && nodemon index.js\" \"cd message-service && nodemon index.js\""
   },
   "keywords": [],
   "author": "",
@@ -31,6 +32,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "concurrently": "^10.0.3",
     "nodemon": "^3.1.14",
     "prisma": "^7.8.0"
   }

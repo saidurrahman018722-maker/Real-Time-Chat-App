@@ -1,34 +1,29 @@
 import { useState } from 'react';
-import { useAuthStore } from '../store/useAuthStore';
-import { MessageSquare, Mail, Lock, Loader2 } from 'lucide-react';
+import { MessageSquare, Mail, Lock, Loader2, User } from 'lucide-react';
 import { axiosInstance } from '../lib/axios';
+import { Link, useNavigate } from 'react-router-dom';
 
-const AuthPage = () => {
-  const [isLogin, setIsLogin] = useState(true);
+const RegisterPage = () => {
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  
-  const { login } = useAuthStore();
+  const [success, setSuccess] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     
-    if (isLogin) {
-      const res = await login(formData.email, formData.password);
-      if (!res.success) setError(res.message);
-    } else {
-      setIsLoading(true);
-      try {
-        await axiosInstance.post('/auth/api/register', formData);
-        setError('Registration successful! Please verify your email.');
-        setTimeout(() => setIsLogin(true), 3000);
-      } catch (err) {
-        setError(err.response?.data?.message || 'Registration failed');
-      } finally {
-        setIsLoading(false);
-      }
+    setIsLoading(true);
+    try {
+      await axiosInstance.post('/auth/api/register', formData);
+      setSuccess('Registration successful! Redirecting to login...');
+      setTimeout(() => navigate('/login'), 2000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Registration failed');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -40,34 +35,38 @@ const AuthPage = () => {
             <div className="bg-primary/10 p-3 rounded-2xl mb-4 text-primary">
               <MessageSquare size={32} />
             </div>
-            <h2 className="card-title text-2xl font-bold">
-              {isLogin ? 'Welcome back' : 'Create account'}
-            </h2>
-            <p className="text-base-content/60 mt-2">
-              {isLogin ? 'Sign in to your account to continue' : 'Sign up to get started with messaging'}
-            </p>
+            <h2 className="card-title text-2xl font-bold">Create account</h2>
+            <p className="text-base-content/60 mt-2">Sign up to get started with messaging</p>
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {error && (
-              <div className={`alert ${error.includes('successful') ? 'alert-success' : 'alert-error'} shadow-sm`}>
+              <div className="alert alert-error shadow-sm text-sm p-3">
                 <span>{error}</span>
               </div>
             )}
+            {success && (
+              <div className="alert alert-success shadow-sm text-sm p-3">
+                <span>{success}</span>
+              </div>
+            )}
 
-            {!isLogin && (
-              <div className="form-control">
-                <label className="label"><span className="label-text">Full Name</span></label>
+            <div className="form-control">
+              <label className="label"><span className="label-text">Full Name</span></label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-base-content/50">
+                  <User size={18} />
+                </div>
                 <input
                   type="text"
                   placeholder="John Doe"
-                  className="input input-bordered w-full"
+                  className="input input-bordered w-full pl-10"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
                 />
               </div>
-            )}
+            </div>
 
             <div className="form-control">
               <label className="label"><span className="label-text">Email</span></label>
@@ -104,15 +103,15 @@ const AuthPage = () => {
             </div>
 
             <button type="submit" className="btn btn-primary mt-4" disabled={isLoading}>
-              {isLoading ? <Loader2 className="animate-spin" size={20} /> : (isLogin ? 'Sign In' : 'Sign Up')}
+              {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Sign Up'}
             </button>
           </form>
 
           <div className="text-center mt-6 text-sm text-base-content/70">
-            {isLogin ? "Don't have an account? " : "Already have an account? "}
-            <button className="link link-primary font-medium" onClick={() => setIsLogin(!isLogin)}>
-              {isLogin ? 'Sign up' : 'Sign in'}
-            </button>
+            Already have an account?{' '}
+            <Link to="/login" className="link link-primary font-medium">
+              Sign in
+            </Link>
           </div>
         </div>
       </div>
@@ -120,4 +119,4 @@ const AuthPage = () => {
   );
 };
 
-export default AuthPage;
+export default RegisterPage;
