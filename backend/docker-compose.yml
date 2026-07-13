@@ -1,13 +1,102 @@
+version: '3.8'
+
 services:
-  redis-session:
+  # --- KAFKA CLUSTER (Official Apache Kafka - KRaft Mode) ---
+  kafka1:
+    image: apache/kafka:3.7.0
+    container_name: kafka1
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka1:9093,2@kafka2:9093,3@kafka3:9093'
+      KAFKA_LISTENERS: 'PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:29092'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka1:9092,EXTERNAL://localhost:29092'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      CLUSTER_ID: 'chat-app-cluster-id-123'
+    ports:
+      - "29092:29092"
+
+  kafka2:
+    image: apache/kafka:3.7.0
+    container_name: kafka2
+    environment:
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka1:9093,2@kafka2:9093,3@kafka3:9093'
+      KAFKA_LISTENERS: 'PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:29093'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka2:9092,EXTERNAL://localhost:29093'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      CLUSTER_ID: 'chat-app-cluster-id-123'
+    ports:
+      - "29093:29093"
+
+  kafka3:
+    image: apache/kafka:3.7.0
+    container_name: kafka3
+    environment:
+      KAFKA_NODE_ID: 3
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka1:9093,2@kafka2:9093,3@kafka3:9093'
+      KAFKA_LISTENERS: 'PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:29094'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka3:9092,EXTERNAL://localhost:29094'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      CLUSTER_ID: 'chat-app-cluster-id-123'
+    ports:
+      - "29094:29094"
+
+  # --- REDIS CLUSTER ---
+  redis:
     image: redis:7-alpine
-    container_name: express_redis_session
-    restart: always
+    container_name: redis-cluster-node
+    command: ["redis-server", "--appendonly", "yes"]
     ports:
       - "6379:6379"
-    volumes:
-      - redis_data:/data
-    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
 
-volumes:
-  redis_data:
+  # --- POSTGRESQL (Official Image) ---
+  # For local development with official images, we will use isolated containers instead of complex replication scripts.
+  # Neon will handle the Master/Slave replication in production.
+  pg-auth:
+    image: postgres:15-alpine
+    container_name: pg-auth
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: adminpassword
+      POSTGRES_DB: auth_db
+    ports:
+      - "5432:5432"
+
+  pg-contact:
+    image: postgres:15-alpine
+    container_name: pg-contact
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: adminpassword
+      POSTGRES_DB: contact_db
+    ports:
+      - "5433:5432"
+
+  pg-conversation:
+    image: postgres:15-alpine
+    container_name: pg-conversation
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: adminpassword
+      POSTGRES_DB: conversation_db
+    ports:
+      - "5434:5432"
+
+  pg-message:
+    image: postgres:15-alpine
+    container_name: pg-message
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: adminpassword
+      POSTGRES_DB: message_db
+    ports:
+      - "5435:5432"
