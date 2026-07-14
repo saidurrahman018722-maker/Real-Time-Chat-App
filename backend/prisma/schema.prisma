@@ -11,6 +11,12 @@ datasource db {
   provider = "postgresql"
 }
 
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+}
+
 enum OtpType {
   EMAIL_VERIFICATION
   PASSWORD_RESET
@@ -28,6 +34,7 @@ model User {
   verifyTokenExpiry DateTime?
   resetToken        String?   @unique
   resetTokenExpiry  DateTime?
+  lastSeen          DateTime  @default(now())
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
@@ -54,6 +61,9 @@ model Otp {
 
 model Conversation {
   id            String    @id @default(uuid())
+  isGroup       Boolean   @default(false)
+  groupName     String?
+  groupPhoto    String?
   participants  User[]    @relation("UserConversations")
   messages      Message[]
   lastMessageId String?
@@ -78,7 +88,7 @@ model Contact {
 model Message {
   id         String @id @default(uuid())
   senderId   String
-  receiverId String
+  receiverId String?
   
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -86,14 +96,15 @@ model Message {
   text  String?
   image String?
   
+  status        MessageStatus @default(SENT)
   isDeletedForEveryone Boolean  @default(false)
   deletedBy            String[] @default([])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  sender   User @relation("SentMessages", fields: [senderId], references: [id])
-  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  sender   User  @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User? @relation("ReceivedMessages", fields: [receiverId], references: [id])
 
   @@index([senderId, receiverId])
   @@index([receiverId])

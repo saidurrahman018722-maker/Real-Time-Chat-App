@@ -9,6 +9,7 @@ import {
   updateProfile,
   getUser,
   verifyEmailToken,
+  changePassword,
 } from "../controllers/auth.controller.js";
 import { validateRequest } from "../middlewares/validateRequest.js";
 import {
@@ -16,6 +17,7 @@ import {
   registrationSchema,
   optSchema,
   updateProfileSchema,
+  changePasswordSchema,
 } from "../validators/auth.validators.js";
 import {
   strictLimiter,
@@ -40,7 +42,7 @@ router.post(
   validateRequest(optSchema),
   OtpVerification
 );
-router.get("/verify-email/:token", standardLimiter, verifyEmailToken);
+router.post("/verify-email", standardLimiter, verifyEmailToken);
 router.post("/login", strictLimiter, validateRequest(loginSchema), login);
 router.get("/devices", strictLimiter, authMiddleware, getDevices);
 router.delete("/devices/:id", costlyLimiter, authMiddleware, revokeDevice);
@@ -54,5 +56,13 @@ router.post(
   updateProfile
 );
 router.get("/check", authMiddleware, getUser);
+
+router.post(
+  "/change-password",
+  strictLimiter,
+  authMiddleware,
+  validateRequest(changePasswordSchema),
+  changePassword
+);
 
 export default router;

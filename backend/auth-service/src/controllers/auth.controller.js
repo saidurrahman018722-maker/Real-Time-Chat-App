@@ -11,6 +11,8 @@ import {
 } from "../services/email.service.js";
 import cloudinary from "../utils/cloudinary.js";
 
+
+
 export const UserRegistration = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -280,19 +282,16 @@ export const logout = async (req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    // 1. Validate the request body using Zod
-    const { name, profilePic, email } = req.body;
+    const { name, email, profilePic } = req.body;
     const userId = req.session.userId;
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    let updateData = {};
-    if (name) {
-      updateData.name = name;
-    }
+    const updateData = {};
+    if (name) updateData.name = name;
+    
     let requireNewVerification = false;
-
     if (email && email !== user.email) {
       const existingEmail = await prisma.user.findUnique({ where: { email } });
       if (existingEmail) {
@@ -304,10 +303,12 @@ export const updateProfile = async (req, res) => {
       updateData.verified = false;
       requireNewVerification = true;
     }
+
     if (profilePic) {
       const cloudResponse = await cloudinary.uploader.upload(profilePic);
       updateData.profilePic = cloudResponse.secure_url;
     }
+    
     if (Object.keys(updateData).length === 0) {
       return res.status(400).json({ message: "No data provided to update." });
     }
@@ -348,10 +349,8 @@ export const updateProfile = async (req, res) => {
         },
       });
 
-      const backendUrl =
-        process.env.BACKEND_URL ||
-        `http://localhost:${process.env.PORT || 3000}`;
-      const verificationUrl = `${backendUrl}/api/auth/verify-email/${verifyToken}`;
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const verificationUrl = `${frontendUrl}/verify-email/${verifyToken}`;
 
       await sendVerificationLinkEmail(
         updatedUser.email,
@@ -364,7 +363,7 @@ export const updateProfile = async (req, res) => {
       message: requireNewVerification
         ? "Profile updated. Please verify your new email address to continue."
         : "Profile updated successfully",
-      user: updateData,
+      user: updatedUser,
       data: { verifyToken },
     });
   } catch (error) {
@@ -397,7 +396,7 @@ export const getUser = async (req, res) => {
 
 export const verifyEmailToken = async (req, res) => {
   try {
-    const { token } = req.params;
+    const { token } = req.body;
     if (!token) {
       return res.status(400).json({ success: false, message: "Token is required" });
     }
@@ -430,15 +429,32 @@ export const verifyEmailToken = async (req, res) => {
       },
     });
 
-    req.session.userId = updatedUser.id;
-    req.session.userAgent = req.headers["user-agent"] || "Unknown Device";
-    req.session.ipAddress = req.ip || "Unknown IP";
-    req.session.loginAt = new Date().toISOString();
-
-    const userSetKey = `user:sessions:${updatedUser.id}`;
-    await redis.sadd(userSetKey, req.sessionID);
-
     return res.status(200).json({ success: true, message: "Email verified successfully" });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.session.userId;
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) return res.status(400).json({ success: false, message: "Incorrect current password" });
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword }
+    });
+
+    return res.status(200).json({ success: true, message: "Password changed successfully" });
   } catch (error) {
     return res.status(500).json({ success: false, message: "Internal server error" });
   }

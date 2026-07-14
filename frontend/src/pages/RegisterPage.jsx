@@ -52,18 +52,18 @@ const RegisterPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-4 relative overflow-hidden">
       {/* Background Animated Shapes */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
-        <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-white/20 blur-3xl rounded-full mix-blend-overlay animate-pulse"></div>
-        <div className="absolute bottom-[-10%] left-[-10%] w-[30rem] h-[30rem] bg-indigo-500/40 blur-3xl rounded-full mix-blend-overlay animate-pulse" style={{ animationDelay: '1.5s' }}></div>
+        <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-white/20 blur-3xl rounded-full mix-blend-overlay animate-pulse"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[30rem] h-[30rem] bg-indigo-500/40 blur-3xl rounded-full mix-blend-overlay animate-pulse" style={{ animationDelay: '2s' }}></div>
       </div>
 
-      <div className="card w-full max-w-lg bg-base-100/80 backdrop-blur-xl shadow-2xl z-10 border border-white/10 animate-fade-in-up transition-all duration-300 hover:shadow-purple-500/20 my-8">
-        <div className="card-body p-8 sm:p-12">
-          <div className="flex flex-col items-center mb-6 text-center">
-            <div className="bg-gradient-to-tr from-primary to-secondary p-4 rounded-3xl mb-6 text-primary-content shadow-lg shadow-primary/30 transform hover:scale-110 transition-transform duration-300">
-              <MessageSquare size={36} strokeWidth={2.5} />
+      <div className="card w-full max-w-lg bg-base-100/80 backdrop-blur-xl shadow-2xl z-10 border border-white/10 animate-fade-in-up transition-all duration-300 hover:shadow-purple-500/20 mx-auto my-4">
+        <div className="card-body p-6 sm:p-8 md:p-12">
+          <div className="flex flex-col items-center mb-6 sm:mb-8 text-center">
+            <div className="bg-gradient-to-tr from-primary to-secondary p-3 sm:p-4 rounded-3xl mb-4 sm:mb-6 text-primary-content shadow-lg shadow-primary/30 transform hover:scale-110 transition-transform duration-300">
+              <MessageSquare className="w-8 h-8 sm:w-9 sm:h-9" strokeWidth={2.5} />
             </div>
-            <h2 className="text-3xl font-extrabold tracking-tight text-white drop-shadow-sm">Create Account</h2>
-            <p className="text-white/80 mt-2 text-sm font-medium">Sign up to get started with messaging</p>
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white drop-shadow-sm">Create Account</h2>
+            <p className="text-white/80 mt-2 text-xs sm:text-sm font-medium">Join ChatWave today</p>
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">

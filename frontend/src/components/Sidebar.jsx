@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import { useChatStore } from '../store/useChatStore';
-import { Search, UserPlus } from 'lucide-react';
+import { Search, UserPlus, Settings } from 'lucide-react';
 import { format } from 'date-fns';
-import ThemeSwitcher from './ThemeSwitcher';
+
+import { Link } from 'react-router-dom';
 
 const Sidebar = () => {
   const { conversations, getConversations, selectedUser, setSelectedUser, isConversationsLoading } = useChatStore();
@@ -12,11 +13,13 @@ const Sidebar = () => {
   }, [getConversations]);
 
   return (
-    <aside className="w-80 border-r border-base-300 flex flex-col bg-base-100">
+    <aside className={`border-r border-base-300 flex-col bg-base-100 ${selectedUser ? 'hidden md:flex' : 'flex'} w-full md:w-80 transition-all duration-300`}>
       <div className="h-16 flex items-center justify-between px-4 border-b border-base-300">
         <h2 className="text-xl font-bold">Chats</h2>
         <div className="flex gap-2">
-          <ThemeSwitcher />
+          <Link to="/settings" className="btn btn-ghost btn-circle btn-sm">
+            <Settings size={20} />
+          </Link>
           <button className="btn btn-ghost btn-circle btn-sm">
             <UserPlus size={20} />
           </button>

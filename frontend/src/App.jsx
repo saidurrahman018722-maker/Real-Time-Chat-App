@@ -5,10 +5,19 @@ import { Loader2 } from 'lucide-react';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ChatPage from './pages/ChatPage';
+import SettingsPage from './pages/SettingsPage';
+import ChangePasswordPage from './pages/ChangePasswordPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
+import { useThemeStore } from './store/useThemeStore';
 import './index.css';
 
 function App() {
   const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
+  const { theme } = useThemeStore();
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     checkAuth();
@@ -27,11 +36,14 @@ function App() {
 
   return (
     <BrowserRouter>
-      <div className="app-container" data-theme={localStorage.getItem('theme') || 'dark'}>
+      <div className="app-container">
         <Routes>
           <Route path="/" element={authUser ? <ChatPage /> : <Navigate to="/login" />} />
           <Route path="/login" element={!authUser ? <LoginPage /> : <Navigate to="/" />} />
           <Route path="/register" element={!authUser ? <RegisterPage /> : <Navigate to="/" />} />
+          <Route path="/settings" element={authUser ? <SettingsPage /> : <Navigate to="/login" />} />
+          <Route path="/change-password" element={authUser ? <ChangePasswordPage /> : <Navigate to="/login" />} />
+          <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
         </Routes>
       </div>
     </BrowserRouter>

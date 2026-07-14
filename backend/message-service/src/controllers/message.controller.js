@@ -21,17 +21,23 @@ export const getMessageByUserId = async (req, res) => {
     if (!conversation) {
       return res.status(200).json({ success: true, data: [] });
     }
+    const { cursor, limit = 50 } = req.query;
 
     const messages = await prisma.message.findMany({
       where: {
         conversationId: conversation.id,
         NOT: { deletedBy: { has: myId } }
       },
-      orderBy: { createdAt: "asc" },
+      take: Number(limit),
+      ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
+      orderBy: { createdAt: "desc" },
     });
 
+    // Reverse to get chronological order for display
+    const orderedMessages = messages.reverse();
+
     // Map through messages to apply WhatsApp-style "This message was deleted" tombstone
-    const formattedMessages = messages.map(msg => {
+    const formattedMessages = orderedMessages.map(msg => {
       if (msg.isDeletedForEveryone) {
         return {
           ...msg,
@@ -90,13 +96,14 @@ export const sendMessage = async (req, res) => {
     }
 
     // 2. Create the message
-    const newMessage = await prisma.message.create({
+    let newMessage = await prisma.message.create({
       data: {
         senderId,
         receiverId,
         conversationId: conversation.id,
         text,
         image: imageUrl,
+        status: 'SENT'
       },
     });
 
@@ -110,8 +117,21 @@ export const sendMessage = async (req, res) => {
     try {
       const { io, userSockets } = await import('../../../index.js');
       const receiverSocketId = userSockets.get(receiverId);
+      
       if (receiverSocketId) {
+        // If receiver is connected, mark as delivered
+        newMessage = await prisma.message.update({
+          where: { id: newMessage.id },
+          data: { status: 'DELIVERED' }
+        });
+        
         io.to(receiverSocketId).emit('newMessage', newMessage);
+        
+        // Also let the sender know it was delivered immediately
+        const senderSocketId = userSockets.get(senderId);
+        if (senderSocketId) {
+          io.to(senderSocketId).emit('messageStatusUpdate', { messageId: newMessage.id, status: 'DELIVERED' });
+        }
       }
     } catch (socketErr) {
       console.error('Socket Emission Error:', socketErr);
