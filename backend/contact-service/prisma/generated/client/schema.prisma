@@ -23,13 +23,14 @@ model User {
 }
 
 model Contact {
-  id        String   @id @default(uuid())
-  ownerId   String
-  owner     User     @relation("ContactOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User     @relation("ContactUser", fields: [userId], references: [id], onDelete: Cascade)
-  alias     String?
-  createdAt DateTime @default(now())
+  id         String   @id @default(uuid())
+  ownerId    String
+  owner      User     @relation("ContactOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation("ContactUser", fields: [userId], references: [id], onDelete: Cascade)
+  alias      String?
+  isFavorite Boolean  @default(false)
+  createdAt  DateTime @default(now())
 
   @@unique([ownerId, userId])
 }

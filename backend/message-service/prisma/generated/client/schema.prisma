@@ -12,13 +12,18 @@ model User {
   name       String
   profilePic String?
 
-  sentMessages     Message[] @relation("SentMessages")
-  receivedMessages Message[] @relation("ReceivedMessages")
+  sentMessages     Message[]      @relation("SentMessages")
+  receivedMessages Message[]      @relation("ReceivedMessages")
+  conversations    Conversation[] @relation("UserConversations")
 }
 
 model Conversation {
-  id       String    @id
-  messages Message[]
+  id           String    @id @default(uuid())
+  participants User[]    @relation("UserConversations")
+  messages     Message[]
+  deletedBy    String[]  @default([])
+  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime  @default(now())
 }
 
 model Message {

@@ -57,6 +57,8 @@ router.post(
 );
 router.get("/check", authMiddleware, getUser);
 
+router.get("/hello-world", (req, res) => res.json({ message: "Hello World" }));
+
 router.post(
   "/change-password",
   strictLimiter,

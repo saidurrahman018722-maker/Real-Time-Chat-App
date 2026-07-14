@@ -83,3 +83,28 @@ export const getContacts = async (req, res) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export const toggleFavorite = async (req, res) => {
+  try {
+    const { contactId } = req.params;
+    const ownerId = req.session.userId;
+
+    const contact = await prisma.contact.findUnique({
+      where: { id: contactId }
+    });
+
+    if (!contact || contact.ownerId !== ownerId) {
+      return res.status(404).json({ error: "Contact not found" });
+    }
+
+    const updatedContact = await prisma.contact.update({
+      where: { id: contactId },
+      data: { isFavorite: !contact.isFavorite }
+    });
+
+    return res.status(200).json({ success: true, data: updatedContact });
+  } catch (error) {
+    console.error("Error in toggleFavorite: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};

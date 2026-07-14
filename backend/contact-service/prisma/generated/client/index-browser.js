@@ -132,6 +132,7 @@ exports.Prisma.ContactScalarFieldEnum = {
   ownerId: 'ownerId',
   userId: 'userId',
   alias: 'alias',
+  isFavorite: 'isFavorite',
   createdAt: 'createdAt'
 };
 

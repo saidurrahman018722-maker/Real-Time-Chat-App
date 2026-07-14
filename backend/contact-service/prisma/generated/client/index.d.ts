@@ -2101,6 +2101,7 @@ export namespace Prisma {
     ownerId: string | null
     userId: string | null
     alias: string | null
+    isFavorite: boolean | null
     createdAt: Date | null
   }
 
@@ -2109,6 +2110,7 @@ export namespace Prisma {
     ownerId: string | null
     userId: string | null
     alias: string | null
+    isFavorite: boolean | null
     createdAt: Date | null
   }
 
@@ -2117,6 +2119,7 @@ export namespace Prisma {
     ownerId: number
     userId: number
     alias: number
+    isFavorite: number
     createdAt: number
     _all: number
   }
@@ -2127,6 +2130,7 @@ export namespace Prisma {
     ownerId?: true
     userId?: true
     alias?: true
+    isFavorite?: true
     createdAt?: true
   }
 
@@ -2135,6 +2139,7 @@ export namespace Prisma {
     ownerId?: true
     userId?: true
     alias?: true
+    isFavorite?: true
     createdAt?: true
   }
 
@@ -2143,6 +2148,7 @@ export namespace Prisma {
     ownerId?: true
     userId?: true
     alias?: true
+    isFavorite?: true
     createdAt?: true
     _all?: true
   }
@@ -2224,6 +2230,7 @@ export namespace Prisma {
     ownerId: string
     userId: string
     alias: string | null
+    isFavorite: boolean
     createdAt: Date
     _count: ContactCountAggregateOutputType | null
     _min: ContactMinAggregateOutputType | null
@@ -2249,6 +2256,7 @@ export namespace Prisma {
     ownerId?: boolean
     userId?: boolean
     alias?: boolean
+    isFavorite?: boolean
     createdAt?: boolean
     owner?: boolean | UserDefaultArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -2259,6 +2267,7 @@ export namespace Prisma {
     ownerId?: boolean
     userId?: boolean
     alias?: boolean
+    isFavorite?: boolean
     createdAt?: boolean
     owner?: boolean | UserDefaultArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -2269,6 +2278,7 @@ export namespace Prisma {
     ownerId?: boolean
     userId?: boolean
     alias?: boolean
+    isFavorite?: boolean
     createdAt?: boolean
     owner?: boolean | UserDefaultArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -2279,10 +2289,11 @@ export namespace Prisma {
     ownerId?: boolean
     userId?: boolean
     alias?: boolean
+    isFavorite?: boolean
     createdAt?: boolean
   }
 
-  export type ContactOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "ownerId" | "userId" | "alias" | "createdAt", ExtArgs["result"]["contact"]>
+  export type ContactOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "ownerId" | "userId" | "alias" | "isFavorite" | "createdAt", ExtArgs["result"]["contact"]>
   export type ContactInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     owner?: boolean | UserDefaultArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -2307,6 +2318,7 @@ export namespace Prisma {
       ownerId: string
       userId: string
       alias: string | null
+      isFavorite: boolean
       createdAt: Date
     }, ExtArgs["result"]["contact"]>
     composites: {}
@@ -2737,6 +2749,7 @@ export namespace Prisma {
     readonly ownerId: FieldRef<"Contact", 'String'>
     readonly userId: FieldRef<"Contact", 'String'>
     readonly alias: FieldRef<"Contact", 'String'>
+    readonly isFavorite: FieldRef<"Contact", 'Boolean'>
     readonly createdAt: FieldRef<"Contact", 'DateTime'>
   }
     
@@ -3186,6 +3199,7 @@ export namespace Prisma {
     ownerId: 'ownerId',
     userId: 'userId',
     alias: 'alias',
+    isFavorite: 'isFavorite',
     createdAt: 'createdAt'
   };
 
@@ -3232,6 +3246,13 @@ export namespace Prisma {
    * Reference to a field of type 'String[]'
    */
   export type ListStringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'String[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'Boolean'
+   */
+  export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 
@@ -3327,6 +3348,7 @@ export namespace Prisma {
     ownerId?: StringFilter<"Contact"> | string
     userId?: StringFilter<"Contact"> | string
     alias?: StringNullableFilter<"Contact"> | string | null
+    isFavorite?: BoolFilter<"Contact"> | boolean
     createdAt?: DateTimeFilter<"Contact"> | Date | string
     owner?: XOR<UserScalarRelationFilter, UserWhereInput>
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
@@ -3337,6 +3359,7 @@ export namespace Prisma {
     ownerId?: SortOrder
     userId?: SortOrder
     alias?: SortOrderInput | SortOrder
+    isFavorite?: SortOrder
     createdAt?: SortOrder
     owner?: UserOrderByWithRelationInput
     user?: UserOrderByWithRelationInput
@@ -3351,6 +3374,7 @@ export namespace Prisma {
     ownerId?: StringFilter<"Contact"> | string
     userId?: StringFilter<"Contact"> | string
     alias?: StringNullableFilter<"Contact"> | string | null
+    isFavorite?: BoolFilter<"Contact"> | boolean
     createdAt?: DateTimeFilter<"Contact"> | Date | string
     owner?: XOR<UserScalarRelationFilter, UserWhereInput>
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
@@ -3361,6 +3385,7 @@ export namespace Prisma {
     ownerId?: SortOrder
     userId?: SortOrder
     alias?: SortOrderInput | SortOrder
+    isFavorite?: SortOrder
     createdAt?: SortOrder
     _count?: ContactCountOrderByAggregateInput
     _max?: ContactMaxOrderByAggregateInput
@@ -3375,6 +3400,7 @@ export namespace Prisma {
     ownerId?: StringWithAggregatesFilter<"Contact"> | string
     userId?: StringWithAggregatesFilter<"Contact"> | string
     alias?: StringNullableWithAggregatesFilter<"Contact"> | string | null
+    isFavorite?: BoolWithAggregatesFilter<"Contact"> | boolean
     createdAt?: DateTimeWithAggregatesFilter<"Contact"> | Date | string
   }
 
@@ -3438,6 +3464,7 @@ export namespace Prisma {
   export type ContactCreateInput = {
     id?: string
     alias?: string | null
+    isFavorite?: boolean
     createdAt?: Date | string
     owner: UserCreateNestedOneWithoutContactsInput
     user: UserCreateNestedOneWithoutSavedAsContactInput
@@ -3448,12 +3475,14 @@ export namespace Prisma {
     ownerId: string
     userId: string
     alias?: string | null
+    isFavorite?: boolean
     createdAt?: Date | string
   }
 
   export type ContactUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     alias?: NullableStringFieldUpdateOperationsInput | string | null
+    isFavorite?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutContactsNestedInput
     user?: UserUpdateOneRequiredWithoutSavedAsContactNestedInput
@@ -3464,6 +3493,7 @@ export namespace Prisma {
     ownerId?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     alias?: NullableStringFieldUpdateOperationsInput | string | null
+    isFavorite?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -3472,12 +3502,14 @@ export namespace Prisma {
     ownerId: string
     userId: string
     alias?: string | null
+    isFavorite?: boolean
     createdAt?: Date | string
   }
 
   export type ContactUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
     alias?: NullableStringFieldUpdateOperationsInput | string | null
+    isFavorite?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -3486,6 +3518,7 @@ export namespace Prisma {
     ownerId?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     alias?: NullableStringFieldUpdateOperationsInput | string | null
+    isFavorite?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -3591,6 +3624,11 @@ export namespace Prisma {
     _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
+  export type BoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
   export type DateTimeFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -3617,6 +3655,7 @@ export namespace Prisma {
     ownerId?: SortOrder
     userId?: SortOrder
     alias?: SortOrder
+    isFavorite?: SortOrder
     createdAt?: SortOrder
   }
 
@@ -3625,6 +3664,7 @@ export namespace Prisma {
     ownerId?: SortOrder
     userId?: SortOrder
     alias?: SortOrder
+    isFavorite?: SortOrder
     createdAt?: SortOrder
   }
 
@@ -3633,7 +3673,16 @@ export namespace Prisma {
     ownerId?: SortOrder
     userId?: SortOrder
     alias?: SortOrder
+    isFavorite?: SortOrder
     createdAt?: SortOrder
+  }
+
+  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
@@ -3754,6 +3803,10 @@ export namespace Prisma {
     connect?: UserWhereUniqueInput
   }
 
+  export type BoolFieldUpdateOperationsInput = {
+    set?: boolean
+  }
+
   export type DateTimeFieldUpdateOperationsInput = {
     set?: Date | string
   }
@@ -3858,6 +3911,11 @@ export namespace Prisma {
     not?: NestedIntNullableFilter<$PrismaModel> | number | null
   }
 
+  export type NestedBoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
   export type NestedDateTimeFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -3867,6 +3925,14 @@ export namespace Prisma {
     gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     not?: NestedDateTimeFilter<$PrismaModel> | Date | string
+  }
+
+  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
@@ -3886,6 +3952,7 @@ export namespace Prisma {
   export type ContactCreateWithoutOwnerInput = {
     id?: string
     alias?: string | null
+    isFavorite?: boolean
     createdAt?: Date | string
     user: UserCreateNestedOneWithoutSavedAsContactInput
   }
@@ -3894,6 +3961,7 @@ export namespace Prisma {
     id?: string
     userId: string
     alias?: string | null
+    isFavorite?: boolean
     createdAt?: Date | string
   }
 
@@ -3910,6 +3978,7 @@ export namespace Prisma {
   export type ContactCreateWithoutUserInput = {
     id?: string
     alias?: string | null
+    isFavorite?: boolean
     createdAt?: Date | string
     owner: UserCreateNestedOneWithoutContactsInput
   }
@@ -3918,6 +3987,7 @@ export namespace Prisma {
     id?: string
     ownerId: string
     alias?: string | null
+    isFavorite?: boolean
     createdAt?: Date | string
   }
 
@@ -3955,6 +4025,7 @@ export namespace Prisma {
     ownerId?: StringFilter<"Contact"> | string
     userId?: StringFilter<"Contact"> | string
     alias?: StringNullableFilter<"Contact"> | string | null
+    isFavorite?: BoolFilter<"Contact"> | boolean
     createdAt?: DateTimeFilter<"Contact"> | Date | string
   }
 
@@ -4074,6 +4145,7 @@ export namespace Prisma {
     id?: string
     userId: string
     alias?: string | null
+    isFavorite?: boolean
     createdAt?: Date | string
   }
 
@@ -4081,12 +4153,14 @@ export namespace Prisma {
     id?: string
     ownerId: string
     alias?: string | null
+    isFavorite?: boolean
     createdAt?: Date | string
   }
 
   export type ContactUpdateWithoutOwnerInput = {
     id?: StringFieldUpdateOperationsInput | string
     alias?: NullableStringFieldUpdateOperationsInput | string | null
+    isFavorite?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     user?: UserUpdateOneRequiredWithoutSavedAsContactNestedInput
   }
@@ -4095,6 +4169,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     alias?: NullableStringFieldUpdateOperationsInput | string | null
+    isFavorite?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -4102,12 +4177,14 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     alias?: NullableStringFieldUpdateOperationsInput | string | null
+    isFavorite?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type ContactUpdateWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
     alias?: NullableStringFieldUpdateOperationsInput | string | null
+    isFavorite?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutContactsNestedInput
   }
@@ -4116,6 +4193,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     ownerId?: StringFieldUpdateOperationsInput | string
     alias?: NullableStringFieldUpdateOperationsInput | string | null
+    isFavorite?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -4123,6 +4201,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     ownerId?: StringFieldUpdateOperationsInput | string
     alias?: NullableStringFieldUpdateOperationsInput | string | null
+    isFavorite?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 

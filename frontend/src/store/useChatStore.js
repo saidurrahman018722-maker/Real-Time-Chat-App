@@ -11,8 +11,11 @@ export const useChatStore = create((set, get) => ({
   selectedUser: null,
   isConversationsLoading: false,
   isMessagesLoading: false,
+  isAddContactOpen: false,
   socket: null,
   onlineUsers: {}, // map of userId -> status/lastSeen
+
+  setIsAddContactOpen: (isOpen) => set({ isAddContactOpen: isOpen }),
 
   initSocket: () => {
     const { socket } = get();
@@ -83,6 +86,28 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
+  searchUsers: async (query) => {
+    try {
+      const res = await axiosInstance.get(`/contact/search?query=${query}`);
+      return res.data.data; // Return the users array directly
+    } catch (error) {
+      console.log('Error searching users:', error);
+      return [];
+    }
+  },
+
+  addContact: async (userId, alias) => {
+    try {
+      const res = await axiosInstance.post(`/contact/${userId}`, { alias });
+      // Update contacts list in store
+      set((state) => ({ contacts: [res.data.data, ...state.contacts] }));
+      return { success: true };
+    } catch (error) {
+      console.log('Error adding contact:', error);
+      return { success: false, message: error.response?.data?.error || 'Failed to add contact' };
+    }
+  },
+
   getMessages: async (userId) => {
     set({ isMessagesLoading: true });
     try {
@@ -114,6 +139,56 @@ export const useChatStore = create((set, get) => ({
       set({ messages: [...messages, res.data.data] });
     } catch (error) {
       console.log('Error sending message:', error);
+    }
+  },
+
+  toggleFavoriteContact: async (contactId) => {
+    try {
+      const res = await axiosInstance.put(`/contact/${contactId}/favorite`);
+      const updatedContact = res.data.data;
+      set((state) => ({
+        contacts: state.contacts.map((c) =>
+          c.id === contactId ? { ...c, isFavorite: updatedContact.isFavorite } : c
+        ),
+      }));
+    } catch (error) {
+      console.log('Error toggling favorite contact:', error);
+    }
+  },
+
+  deleteMessage: async (messageId, forEveryone) => {
+    try {
+      await axiosInstance.delete(`/message/${messageId}`, { data: { forEveryone } });
+      if (forEveryone) {
+        set((state) => ({
+          messages: state.messages.map((m) =>
+            m.id === messageId
+              ? { ...m, isDeletedForEveryone: true, text: "🚫 This message was deleted", image: null }
+              : m
+          ),
+        }));
+      } else {
+        set((state) => ({
+          messages: state.messages.filter((m) => m.id !== messageId),
+        }));
+      }
+    } catch (error) {
+      console.log('Error deleting message:', error);
+    }
+  },
+
+  forwardMessage: async (messageData, receiverId) => {
+    const { selectedUser, messages } = get();
+    try {
+      const res = await axiosInstance.post(`/message/send/${receiverId}`, messageData);
+      // If we are currently looking at the chat we forwarded to, add it to the view
+      if (selectedUser?.id === receiverId) {
+        set({ messages: [...messages, res.data.data] });
+      }
+      return { success: true };
+    } catch (error) {
+      console.log('Error forwarding message:', error);
+      return { success: false };
     }
   },
 

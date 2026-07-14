@@ -126,13 +126,16 @@ export const OtpVerification = async (req, res) => {
       },
     });
   } catch (error) {
-    if (error instanceof z.ZodError)
+    console.error("Error in login:", error);
+    if (error instanceof z.ZodError) {
       return res.status(400).json({ error: error.errors });
-    return res.status(500).json({ error: "Internal server error" });
+    }
+    return res.status(500).json({ error: "Internal server error", details: error.message });
   }
 };
 
 export const login = async (req, res) => {
+  console.log("LOGIN CALLED:", req.body);
   try {
     const { email, password } = req.body;
 
@@ -145,7 +148,7 @@ export const login = async (req, res) => {
       });
     }
 
-    const handleFailedAttempt = async () => {
+    const handleFailedAttempt = async (reason) => {
       const attempts = await redis.incr(lockoutKey);
       if (attempts === 1) {
         // Set expiry for 15 minutes (900 seconds)
@@ -153,6 +156,7 @@ export const login = async (req, res) => {
       }
       return res.status(401).json({
         message: "Invalid Email or Password",
+        debug: reason
       });
     };
 
@@ -163,7 +167,7 @@ export const login = async (req, res) => {
     });
 
     if (!user) {
-      return await handleFailedAttempt();
+      return await handleFailedAttempt("USER_NOT_FOUND");
     }
 
     if (user.verified === false) {
@@ -174,7 +178,7 @@ export const login = async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return await handleFailedAttempt();
+      return await handleFailedAttempt("PASSWORD_MISMATCH");
     }
 
     // Successful login: clear lockout attempts

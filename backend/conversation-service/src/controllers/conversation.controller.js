@@ -17,13 +17,6 @@ export const getConversations = async (req, res) => {
           where: { id: { not: loggedInUserId } },
           select: { id: true, name: true, profilePic: true },
         },
-        messages: {
-          where: {
-            NOT: { deletedBy: { has: loggedInUserId } }
-          },
-          orderBy: { createdAt: "desc" },
-          take: 1,
-        },
       },
     });
 
@@ -31,7 +24,7 @@ export const getConversations = async (req, res) => {
     const formatted = conversations.map(c => ({
       id: c.id,
       partner: c.participants[0],
-      lastMessage: c.messages[0] || null,
+      lastMessage: null,
       updatedAt: c.updatedAt
     }));
 

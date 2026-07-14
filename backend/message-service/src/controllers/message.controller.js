@@ -7,15 +7,11 @@ export const getMessageByUserId = async (req, res) => {
   try {
     const { id: userToChatId } = req.params;
     const myId = req.session.userId;
+    const conversationId = [myId, userToChatId].sort().join('_');
 
     // Find the conversation
-    const conversation = await prisma.conversation.findFirst({
-      where: {
-        AND: [
-          { participants: { some: { id: myId } } },
-          { participants: { some: { id: userToChatId } } }
-        ]
-      }
+    const conversation = await prisma.conversation.findUnique({
+      where: { id: conversationId }
     });
 
     if (!conversation) {
@@ -67,33 +63,19 @@ export const sendMessage = async (req, res) => {
       imageUrl = uploadResponse.secure_url;
     }
 
-    // 1. Find or Create Conversation
-    let conversation = await prisma.conversation.findFirst({
-      where: {
-        AND: [
-          { participants: { some: { id: senderId } } },
-          { participants: { some: { id: receiverId } } }
-        ]
+    const conversationId = [senderId, receiverId].sort().join('_');
+
+    // 1. Upsert Conversation
+    let conversation = await prisma.conversation.upsert({
+      where: { id: conversationId },
+      update: { deletedBy: [] }, // Restore if deleted
+      create: {
+        id: conversationId,
+        participants: {
+          connect: [{ id: senderId }, { id: receiverId }]
+        }
       }
     });
-
-    if (!conversation) {
-      conversation = await prisma.conversation.create({
-        data: {
-          participants: {
-            connect: [{ id: senderId }, { id: receiverId }]
-          }
-        }
-      });
-    } else {
-      // If conversation was deleted by either party, restore it
-      if (conversation.deletedBy.length > 0) {
-        await prisma.conversation.update({
-          where: { id: conversation.id },
-          data: { deletedBy: [] }
-        });
-      }
-    }
 
     // 2. Create the message
     let newMessage = await prisma.message.create({
@@ -102,8 +84,7 @@ export const sendMessage = async (req, res) => {
         receiverId,
         conversationId: conversation.id,
         text,
-        image: imageUrl,
-        status: 'SENT'
+        image: imageUrl
       },
     });
 
@@ -113,18 +94,25 @@ export const sendMessage = async (req, res) => {
       data: { updatedAt: new Date() }
     });
 
+    // 4. Publish MessageCreated via Kafka so conversation-service can upsert it
+    try {
+      const { publishEvent } = await import('../../../shared/kafka.js');
+      await publishEvent('message-events', 'MessageCreated', {
+        id: newMessage.id,
+        conversationId: conversation.id,
+        senderId,
+        receiverId
+      });
+    } catch (err) {
+      console.error('Kafka Publish Error (MessageCreated):', err);
+    }
+
     // --- MICROSERVICE REFACTOR: Emit via local io ---
     try {
-      const { io, userSockets } = await import('../../../index.js');
+      const { io, userSockets } = await import('../../index.js');
       const receiverSocketId = userSockets.get(receiverId);
       
       if (receiverSocketId) {
-        // If receiver is connected, mark as delivered
-        newMessage = await prisma.message.update({
-          where: { id: newMessage.id },
-          data: { status: 'DELIVERED' }
-        });
-        
         io.to(receiverSocketId).emit('newMessage', newMessage);
         
         // Also let the sender know it was delivered immediately

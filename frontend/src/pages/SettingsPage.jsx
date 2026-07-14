@@ -42,6 +42,18 @@ const SettingsPage = () => {
       return () => clearTimeout(timer);
     }
   }, [updateMessage]);
+
+  // Handle clicking outside the mobile dropdown menu
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      const dropdown = document.getElementById('settings-mobile-menu');
+      if (dropdown && !dropdown.contains(e.target)) {
+        dropdown.removeAttribute('open');
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     setUpdateMessage('Updating...');
@@ -89,19 +101,19 @@ const SettingsPage = () => {
           <h1 className="text-xl font-bold ml-2">Settings</h1>
         </div>
         <div className="flex-none md:hidden">
-          <div className="dropdown dropdown-end">
-            <label tabIndex={0} className="btn btn-ghost btn-circle">
+          <details className="dropdown dropdown-end" id="settings-mobile-menu">
+            <summary className="btn btn-ghost btn-circle list-none [&::-webkit-details-marker]:hidden">
               <Menu size={24} />
-            </label>
-            <ul tabIndex={0} className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52 gap-1">
+            </summary>
+            <ul className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52 gap-1">
               {tabs.map((tab) => (
                 <li key={tab.id}>
                   <a 
                     className={activeTab === tab.id ? 'active' : ''} 
                     onClick={() => {
                       setActiveTab(tab.id);
-                      const elem = document.activeElement;
-                      if(elem) elem.blur(); // Close dropdown after click
+                      const dropdown = document.getElementById('settings-mobile-menu');
+                      if(dropdown) dropdown.removeAttribute('open');
                     }}
                   >
                     {tab.icon}
@@ -110,7 +122,7 @@ const SettingsPage = () => {
                 </li>
               ))}
             </ul>
-          </div>
+          </details>
         </div>
       </div>
 

@@ -6,7 +6,7 @@ import cors from 'cors';
 import http from 'http';
 import { Server } from 'socket.io';
 import { prisma } from './src/config/db.js';
-import { createConsumer, initKafkaTopics } from '../shared/kafka.js';
+import { createConsumer, initKafkaTopics, connectProducer } from '../shared/kafka.js';
 import { sessionMiddleware } from './src/middlewares/session.middleware.js';
 import { redis } from './src/config/redis.connect.js';
 
@@ -21,7 +21,8 @@ const io = new Server(server, {
 });
 
 app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(sessionMiddleware);
 
 const userSockets = new Map();
@@ -106,6 +107,7 @@ io.on('connection', async (socket) => {
 
 const runKafkaConsumer = async () => {
   await initKafkaTopics(['user-events', 'message-events', 'contact-events']);
+  await connectProducer();
   const consumer = createConsumer('message-service-group');
   await consumer.connect();
   await consumer.subscribe({ topic: 'user-events', fromBeginning: true });

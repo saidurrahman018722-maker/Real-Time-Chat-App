@@ -127,7 +127,10 @@ exports.Prisma.UserScalarFieldEnum = {
 };
 
 exports.Prisma.ConversationScalarFieldEnum = {
-  id: 'id'
+  id: 'id',
+  deletedBy: 'deletedBy',
+  updatedAt: 'updatedAt',
+  createdAt: 'createdAt'
 };
 
 exports.Prisma.MessageScalarFieldEnum = {

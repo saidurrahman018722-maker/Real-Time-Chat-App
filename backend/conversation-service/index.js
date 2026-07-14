@@ -53,12 +53,19 @@ const runKafkaConsumer = async () => {
         }
       } else if (eventName === 'MessageCreated') {
         try {
-          await prisma.conversation.update({
+          await prisma.conversation.upsert({
             where: { id: payload.conversationId },
-            data: { lastMessageId: payload.id }
+            update: { lastMessageId: payload.id },
+            create: {
+              id: payload.conversationId,
+              lastMessageId: payload.id,
+              participants: {
+                connect: [{ id: payload.senderId }, { id: payload.receiverId }]
+              }
+            }
           });
         } catch (error) {
-          console.error('Error updating conversation last message:', error);
+          console.error('Error upserting conversation last message:', error);
         }
       }
     },
