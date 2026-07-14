@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { axiosInstance } from '../lib/axios';
+import { useChatStore } from './useChatStore';
 
 export const useAuthStore = create((set) => ({
   authUser: null,
@@ -10,6 +11,7 @@ export const useAuthStore = create((set) => ({
     try {
       const res = await axiosInstance.get('/auth/check');
       set({ authUser: res.data.data });
+      useChatStore.getState().initSocket();
     } catch (error) {
       console.log('Error in checkAuth:', error);
       set({ authUser: null });
@@ -23,6 +25,7 @@ export const useAuthStore = create((set) => ({
     try {
       const res = await axiosInstance.post('/auth/login', { email, password });
       set({ authUser: res.data.data });
+      useChatStore.getState().initSocket();
       return { success: true };
     } catch (error) {
       console.log('Error in login:', error);
@@ -36,6 +39,7 @@ export const useAuthStore = create((set) => ({
     try {
       await axiosInstance.post('/auth/logout');
       set({ authUser: null });
+      useChatStore.getState().disconnectSocket();
     } catch (error) {
       console.log('Error in logout:', error);
     }

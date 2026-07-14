@@ -10,6 +10,7 @@ datasource db {
 model User {
   id         String  @id
   name       String
+  email      String?
   profilePic String?
 
   sentMessages     Message[]      @relation("SentMessages")
@@ -37,6 +38,7 @@ model Message {
   text  String?
   image String?
 
+  isRead               Boolean  @default(false)
   isDeletedForEveryone Boolean  @default(false)
   deletedBy            String[] @default([])
 

@@ -14,6 +14,7 @@ export const useChatStore = create((set, get) => ({
   isAddContactOpen: false,
   socket: null,
   onlineUsers: {}, // map of userId -> status/lastSeen
+  unreadCounts: {}, // map of conversationId -> count
 
   setIsAddContactOpen: (isOpen) => set({ isAddContactOpen: isOpen }),
 
@@ -31,12 +32,34 @@ export const useChatStore = create((set, get) => ({
     });
 
     newSocket.on('newMessage', (message) => {
-      const { selectedUser, messages } = get();
-      if (selectedUser && message.conversationId === messages[0]?.conversationId) {
+      const { selectedUser, messages, unreadCounts, conversations } = get();
+      
+      // Update conversations list for the sidebar
+      const exists = conversations.some(c => c.id === message.conversationId);
+      if (!exists) {
+        get().getConversations();
+      } else {
+        const updatedConversations = conversations.map(conv => {
+          if (conv.id === message.conversationId) {
+            return { ...conv, lastMessage: message, updatedAt: new Date().toISOString() };
+          }
+          return conv;
+        });
+        // Move updated conversation to top
+        const sortedConversations = updatedConversations.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+        set({ conversations: sortedConversations });
+      }
+
+      // If the message belongs to the currently open chat
+      if (selectedUser && (message.senderId === selectedUser.id || message.receiverId === selectedUser.id)) {
         set({ messages: [...messages, message] });
-        
-        // Emitting markAsRead if the chat is open
         newSocket.emit('markAsRead', { messageId: message.id, senderId: message.senderId });
+      } else {
+        // Increment unread count if the chat is not currently open
+        const currentCount = unreadCounts[message.conversationId] || 0;
+        set({ 
+          unreadCounts: { ...unreadCounts, [message.conversationId]: currentCount + 1 }
+        });
       }
     });
 
@@ -44,7 +67,13 @@ export const useChatStore = create((set, get) => ({
       set((state) => ({
         messages: state.messages.map((msg) => 
           msg.id === messageId ? { ...msg, status } : msg
-        )
+        ),
+        conversations: state.conversations.map(conv => {
+          if (conv.lastMessage?.id === messageId) {
+            return { ...conv, lastMessage: { ...conv.lastMessage, status } };
+          }
+          return conv;
+        })
       }));
     });
 
@@ -70,10 +99,41 @@ export const useChatStore = create((set, get) => ({
     try {
       const res = await axiosInstance.get('/conversation');
       set({ conversations: res.data.data });
+      get().fetchUnreadCounts(); // Fetch unread counts after getting conversations
     } catch (error) {
       console.log('Error fetching conversations:', error);
     } finally {
       set({ isConversationsLoading: false });
+    }
+  },
+
+  fetchUnreadCounts: async () => {
+    try {
+      const res = await axiosInstance.get('/message/unread-counts');
+      set({ unreadCounts: res.data.data });
+    } catch (error) {
+      console.log('Error fetching unread counts:', error);
+    }
+  },
+
+  markConversationAsRead: async (userId) => {
+    try {
+      const { unreadCounts } = get();
+      // Call backend to mark as read
+      await axiosInstance.post(`/message/mark-read/${userId}`);
+
+      // Optimistically clear the unread count for this conversation
+      const conv = get().conversations.find(c => c.partner?.id === userId);
+      if (conv) {
+        set({
+          unreadCounts: { ...unreadCounts, [conv.id]: 0 }
+        });
+      }
+
+      // Refresh counts to stay consistent
+      get().fetchUnreadCounts();
+    } catch (error) {
+      console.log('Error marking conversation as read:', error);
     }
   },
 
@@ -115,15 +175,8 @@ export const useChatStore = create((set, get) => ({
       const fetchedMessages = res.data.data;
       set({ messages: fetchedMessages });
       
-      // Mark as read for received messages that are SENT or DELIVERED
-      const { socket } = get();
-      if (socket) {
-        fetchedMessages.forEach(msg => {
-          if (msg.senderId === userId && msg.status !== 'READ') {
-            socket.emit('markAsRead', { messageId: msg.id, senderId: userId });
-          }
-        });
-      }
+      // Mark as read is now handled concurrently by ChatWindow calling markConversationAsRead 
+      // which hits the backend HTTP endpoint, updating DB and emitting to the sender.
     } catch (error) {
       console.log('Error fetching messages:', error);
     } finally {
@@ -132,11 +185,29 @@ export const useChatStore = create((set, get) => ({
   },
 
   sendMessage: async (messageData) => {
-    const { selectedUser, messages } = get();
+    const { selectedUser, messages, conversations } = get();
     try {
-      // Optimistic UI could go here, but since we want verifiable states, let's wait for the real response
       const res = await axiosInstance.post(`/message/send/${selectedUser.id}`, messageData);
-      set({ messages: [...messages, res.data.data] });
+      const newMsg = res.data.data;
+      
+      // Update messages list
+      set({ messages: [...messages, newMsg] });
+
+      // Update conversations list for the sidebar
+      const exists = conversations.some(c => c.id === newMsg.conversationId);
+      if (!exists) {
+        get().getConversations();
+      } else {
+        const updatedConversations = conversations.map(conv => {
+          if (conv.id === newMsg.conversationId) {
+            return { ...conv, lastMessage: newMsg, updatedAt: new Date().toISOString() };
+          }
+          return conv;
+        });
+        // Move updated conversation to top
+        const sortedConversations = updatedConversations.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+        set({ conversations: sortedConversations });
+      }
     } catch (error) {
       console.log('Error sending message:', error);
     }

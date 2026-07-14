@@ -8,7 +8,7 @@ import ForwardMessageModal from './ForwardMessageModal';
 import BackgroundSelector from './BackgroundSelector';
 
 const ChatWindow = () => {
-  const { contacts, messages, getMessages, sendMessage, deleteMessage, toggleFavoriteContact, selectedUser, setSelectedUser, isMessagesLoading, onlineUsers, socket, setIsAddContactOpen } = useChatStore();
+  const { contacts, messages, getMessages, sendMessage, deleteMessage, toggleFavoriteContact, selectedUser, setSelectedUser, isMessagesLoading, onlineUsers, socket, setIsAddContactOpen, markConversationAsRead } = useChatStore();
   const { authUser } = useAuthStore();
   const [text, setText] = useState('');
   const [imagePreview, setImagePreview] = useState(null);
@@ -36,8 +36,9 @@ const ChatWindow = () => {
   useEffect(() => {
     if (selectedUser) {
       getMessages(selectedUser.id);
+      markConversationAsRead(selectedUser.id);
     }
-  }, [selectedUser, getMessages]);
+  }, [selectedUser?.id, getMessages, markConversationAsRead]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -96,6 +97,7 @@ const ChatWindow = () => {
     sendMessage({ text: text.trim(), image: imagePreview });
     setText('');
     setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
     setIsTyping(false);
     socket?.emit('typing', { receiverId: selectedUser.id, isTyping: false });
   };
@@ -103,14 +105,11 @@ const ChatWindow = () => {
   const renderMessageStatus = (msg) => {
     if (msg.senderId !== authUser.id) return null;
     
-    if (msg.status === 'SENT') {
-      return <Check size={14} className="text-base-content/50 ml-1" />;
-    } else if (msg.status === 'DELIVERED') {
-      return <CheckCheck size={14} className="text-base-content/50 ml-1" />;
-    } else if (msg.status === 'READ') {
+    if (msg.isRead || msg.status === 'READ') {
       return <CheckCheck size={14} className="text-blue-500 ml-1" />;
     }
-    return null;
+    
+    return <Check size={14} className="text-base-content/50 ml-1" />;
   };
 
   if (!selectedUser) {
@@ -228,8 +227,6 @@ const ChatWindow = () => {
           </div>
         </div>
         <div className="flex gap-2 items-center">
-          <BackgroundSelector conversationId={selectedUser.id} />
-          
           <div className="dropdown dropdown-end">
             <label tabIndex={0} className="btn btn-ghost btn-circle btn-sm">
               <MoreVertical size={20} />
@@ -243,6 +240,7 @@ const ChatWindow = () => {
                   </button>
                 </li>
               )}
+              
               <li><button onClick={() => setIsSearching(!isSearching)}><Search size={16} /> Search Chat</button></li>
               <li>
                 <button onClick={() => {
@@ -522,6 +520,9 @@ const ChatWindow = () => {
           messageData={{ text: selectedMessage.text, image: selectedMessage.image }}
         />
       )}
+
+      {/* Background Selector Modal */}
+      <BackgroundSelector conversationId={selectedUser.id} />
     </div>
   );
 };

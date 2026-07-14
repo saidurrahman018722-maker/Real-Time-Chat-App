@@ -42,13 +42,11 @@ app.use('/contact', createProxyMiddleware({
   },
 }));
 
-// Conversation Service proxy (Protected inside microservice)
+// Conversation proxy - Moved to message-service to access Message table
 app.use('/conversation', createProxyMiddleware({
-  target: process.env.CONVERSATION_SERVICE_URL,
+  target: process.env.MESSAGE_SERVICE_URL,
   changeOrigin: true,
-  pathRewrite: {
-    '^/conversation': '',
-  },
+  pathRewrite: (path, req) => req.originalUrl,
 }));
 
 // Message Service proxy (Protected inside microservice, supports WebSockets)
