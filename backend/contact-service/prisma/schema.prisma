@@ -17,6 +17,7 @@ model User {
   name       String
   email      String    @unique
   profilePic String?
+  lastSeen   DateTime?
 
   contacts         Contact[] @relation("ContactOwner")
   savedAsContact   Contact[] @relation("ContactUser")

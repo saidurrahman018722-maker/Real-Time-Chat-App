@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/useAuthStore';
+import { useChatStore } from './store/useChatStore';
 import { Loader2 } from 'lucide-react';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -13,6 +14,7 @@ import './index.css';
 
 function App() {
   const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
+  const { initSocket, disconnectSocket } = useChatStore();
   const { theme } = useThemeStore();
 
   useEffect(() => {
@@ -22,6 +24,14 @@ function App() {
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  useEffect(() => {
+    if (authUser) {
+      initSocket();
+    } else {
+      disconnectSocket();
+    }
+  }, [authUser, initSocket, disconnectSocket]);
 
   if (isCheckingAuth) {
     return (

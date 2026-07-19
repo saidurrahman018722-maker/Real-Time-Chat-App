@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
 import { useThemeStore } from '../store/useThemeStore';
+import { useChatStore } from '../store/useChatStore';
 import { LogOut, User, Image as ImageIcon, Send, ArrowLeft, Settings, Palette, Image as MediaIcon, CheckCircle2, AlertCircle, Menu } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -15,6 +16,7 @@ const THEMES = [
 const SettingsPage = () => {
   const { authUser, logout, updateProfile } = useAuthStore();
   const { theme, setTheme } = useThemeStore();
+  const { sharedMediaGlobal, getSharedMediaGlobal, isMediaLoading } = useChatStore();
   
   const [activeTab, setActiveTab] = useState('account');
   const [name, setName] = useState(authUser?.name || '');
@@ -90,6 +92,8 @@ const SettingsPage = () => {
     { id: 'preferences', label: 'Preferences', icon: <Palette size={18} /> },
     { id: 'media', label: 'Media', icon: <MediaIcon size={18} /> },
   ];
+
+  if (!authUser) return null;
 
   return (
     <div className="h-screen flex flex-col bg-base-200">
@@ -277,28 +281,50 @@ const SettingsPage = () => {
             </div>
           )}
 
-          {/* MEDIA TAB */}
+          {/* Media Settings Tab */}
           {activeTab === 'media' && (
-            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
-              <section>
-                <h2 className="text-2xl font-bold flex items-center gap-2 mb-6 border-b border-base-300 pb-2">
-                  <MediaIcon className="text-primary" /> Shared Media
-                </h2>
-                <p className="text-base-content/70 mb-6">
-                  All photos, videos, and documents you have shared across your contacts.
-                </p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {/* Placeholder items */}
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className="aspect-square bg-base-200 rounded-xl flex items-center justify-center overflow-hidden hover:opacity-80 transition-opacity cursor-pointer shadow-sm border border-base-300">
-                      <ImageIcon className="text-base-300" size={48} />
-                    </div>
-                  ))}
+            <div className="bg-base-100 rounded-3xl p-6 sm:p-10 shadow-xl border border-base-200/50 animate-fade-in relative overflow-hidden h-full flex flex-col">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none"></div>
+              
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                  <MediaIcon size={24} />
                 </div>
-                <div className="text-center mt-8 p-8 border-2 border-dashed border-base-300 rounded-xl text-base-content/50">
-                  More media will appear here as you chat.
+                <div>
+                  <h2 className="text-2xl font-bold">Shared Media</h2>
+                  <p className="text-base-content/60">View all images shared across your conversations</p>
                 </div>
-              </section>
+              </div>
+
+              <div className="flex-1 overflow-y-auto min-h-[400px]">
+                {isMediaLoading ? (
+                  <div className="flex justify-center items-center h-full">
+                    <span className="loading loading-spinner loading-lg text-primary"></span>
+                  </div>
+                ) : sharedMediaGlobal.length === 0 ? (
+                  <div className="flex flex-col justify-center items-center h-full text-base-content/50 gap-4 mt-12">
+                    <MediaIcon size={64} className="opacity-20" />
+                    <p className="text-lg">You haven't shared any media yet</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 pb-8">
+                    {sharedMediaGlobal.map((msg) => (
+                      <div key={msg.id} className="aspect-square bg-base-200 rounded-xl overflow-hidden group relative shadow-sm border border-base-300">
+                        <img 
+                          src={msg.image} 
+                          alt="Shared media" 
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3 pointer-events-none">
+                          <span className="text-white text-xs font-medium truncate">
+                            {new Date(msg.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

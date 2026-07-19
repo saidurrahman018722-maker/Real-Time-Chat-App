@@ -12,6 +12,7 @@ model User {
   name       String
   email      String    @unique
   profilePic String?
+  lastSeen   DateTime?
 
   conversations Conversation[] @relation("UserConversations")
 }

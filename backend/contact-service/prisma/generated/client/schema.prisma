@@ -13,10 +13,11 @@ datasource db {
 }
 
 model User {
-  id         String  @id
+  id         String    @id
   name       String
-  email      String  @unique
+  email      String    @unique
   profilePic String?
+  lastSeen   DateTime?
 
   contacts       Contact[] @relation("ContactOwner")
   savedAsContact Contact[] @relation("ContactUser")

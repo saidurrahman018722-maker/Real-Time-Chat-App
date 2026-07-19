@@ -11,7 +11,11 @@ export const useChatStore = create((set, get) => ({
   selectedUser: null,
   isConversationsLoading: false,
   isMessagesLoading: false,
+  isMediaLoading: false,
   isAddContactOpen: false,
+  pendingMessage: null,
+  sharedMediaGlobal: [],
+  sharedMediaConversation: [],
   socket: null,
   onlineUsers: {}, // map of userId -> status/lastSeen
 
@@ -52,6 +56,14 @@ export const useChatStore = create((set, get) => ({
       set((state) => ({
         onlineUsers: { ...state.onlineUsers, [userId]: status }
       }));
+    });
+
+    newSocket.on('initialOnlineUsers', (userIds) => {
+      const initialMap = {};
+      userIds.forEach(id => {
+        initialMap[id] = 'online';
+      });
+      set({ onlineUsers: initialMap });
     });
 
     set({ socket: newSocket });
@@ -108,12 +120,40 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
+  getSharedMediaGlobal: async () => {
+    set({ isMediaLoading: true });
+    try {
+      const res = await axiosInstance.get('/message/media/global');
+      set({ sharedMediaGlobal: res.data.data });
+    } catch (error) {
+      console.log('Error fetching global media:', error);
+    } finally {
+      set({ isMediaLoading: false });
+    }
+  },
+
+  getSharedMediaConversation: async (userId) => {
+    set({ isMediaLoading: true });
+    try {
+      const res = await axiosInstance.get(`/message/media/${userId}`);
+      set({ sharedMediaConversation: res.data.data });
+    } catch (error) {
+      console.log('Error fetching conversation media:', error);
+    } finally {
+      set({ isMediaLoading: false });
+    }
+  },
+
   getMessages: async (userId) => {
     set({ isMessagesLoading: true });
     try {
       const res = await axiosInstance.get(`/message/${userId}`);
       const fetchedMessages = res.data.data;
-      set({ messages: fetchedMessages });
+      
+      // Prevent race conditions
+      if (get().selectedUser?.id === userId) {
+        set({ messages: fetchedMessages });
+      }
       
       // Mark as read for received messages that are SENT or DELIVERED
       const { socket } = get();
@@ -127,18 +167,50 @@ export const useChatStore = create((set, get) => ({
     } catch (error) {
       console.log('Error fetching messages:', error);
     } finally {
-      set({ isMessagesLoading: false });
+      if (get().selectedUser?.id === userId) {
+        set({ isMessagesLoading: false });
+      }
     }
   },
 
   sendMessage: async (messageData) => {
-    const { selectedUser, messages } = get();
+    // Capture receiver ID before the await
+    const receiverId = get().selectedUser?.id;
+    if (!receiverId) return;
+
+    set({ pendingMessage: { ...messageData, receiverId } });
+
     try {
-      // Optimistic UI could go here, but since we want verifiable states, let's wait for the real response
-      const res = await axiosInstance.post(`/message/send/${selectedUser.id}`, messageData);
-      set({ messages: [...messages, res.data.data] });
+      const res = await axiosInstance.post(`/message/send/${receiverId}`, messageData);
+      const newMsg = res.data.data;
+      
+      const { selectedUser, messages, conversations } = get();
+      
+      // Only append to the messages list if we are still looking at this user
+      if (selectedUser?.id === receiverId) {
+        set({ messages: [...messages, newMsg] });
+      }
+
+      // Update conversations list for the sidebar
+      const exists = conversations.some(c => c.id === newMsg.conversationId);
+      if (!exists) {
+        get().getConversations();
+      } else {
+        const updatedConversations = conversations.map(conv => {
+          if (conv.id === newMsg.conversationId) {
+            return { ...conv, lastMessage: newMsg, updatedAt: new Date().toISOString() };
+          }
+          return conv;
+        });
+        const sortedConversations = updatedConversations.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+        set({ conversations: sortedConversations });
+      }
     } catch (error) {
       console.log('Error sending message:', error);
+    } finally {
+      if (get().pendingMessage?.receiverId === receiverId) {
+        set({ pendingMessage: null });
+      }
     }
   },
 
@@ -178,9 +250,11 @@ export const useChatStore = create((set, get) => ({
   },
 
   forwardMessage: async (messageData, receiverId) => {
-    const { selectedUser, messages } = get();
     try {
       const res = await axiosInstance.post(`/message/send/${receiverId}`, messageData);
+      
+      const { selectedUser, messages } = get();
+      
       // If we are currently looking at the chat we forwarded to, add it to the view
       if (selectedUser?.id === receiverId) {
         set({ messages: [...messages, res.data.data] });

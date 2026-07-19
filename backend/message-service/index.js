@@ -50,6 +50,10 @@ io.on('connection', async (socket) => {
   // Broadcast to others (in a real app, only broadcast to contacts)
   io.emit('userStatus', { userId: socket.userId, status: 'online' });
 
+  // Send the list of currently online users to the new socket
+  const onlineUserIds = Array.from(userSockets.keys());
+  socket.emit('initialOnlineUsers', onlineUserIds);
+
   // Update undelivered messages to DELIVERED when user connects
   const undeliveredMessages = await prisma.message.findMany({
     where: { receiverId: socket.userId, status: 'SENT' }

@@ -7,10 +7,17 @@ datasource db {
   provider = "postgresql"
 }
 
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+}
+
 model User {
   id         String    @id
   name       String
   profilePic String?
+  lastSeen   DateTime?
 
   sentMessages     Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
@@ -29,7 +36,7 @@ model Conversation {
 model Message {
   id         String @id @default(uuid())
   senderId   String
-  receiverId String
+  receiverId String?
   
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -37,14 +44,15 @@ model Message {
   text  String?
   image String?
   
+  status               MessageStatus @default(SENT)
   isDeletedForEveryone Boolean  @default(false)
   deletedBy            String[] @default([])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  sender   User @relation("SentMessages", fields: [senderId], references: [id])
-  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  sender   User  @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User? @relation("ReceivedMessages", fields: [receiverId], references: [id])
 
   @@index([senderId, receiverId])
   @@index([receiverId])

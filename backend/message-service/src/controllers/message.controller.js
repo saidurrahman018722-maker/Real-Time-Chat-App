@@ -3,6 +3,50 @@ import cloudinary from "../utils/cloudinary.js";
 
 // --- MESSAGES ---
 
+export const getSharedMediaGlobal = async (req, res) => {
+  try {
+    const myId = req.session.userId;
+    const mediaMessages = await prisma.message.findMany({
+      where: {
+        OR: [
+          { senderId: myId },
+          { receiverId: myId }
+        ],
+        image: { not: null },
+        isDeletedForEveryone: false,
+        NOT: { deletedBy: { has: myId } }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+    return res.status(200).json({ success: true, data: mediaMessages });
+  } catch (error) {
+    console.error("Error in getSharedMediaGlobal: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const getSharedMediaConversation = async (req, res) => {
+  try {
+    const myId = req.session.userId;
+    const { id: userToChatId } = req.params;
+    const conversationId = [myId, userToChatId].sort().join('_');
+
+    const mediaMessages = await prisma.message.findMany({
+      where: {
+        conversationId,
+        image: { not: null },
+        isDeletedForEveryone: false,
+        NOT: { deletedBy: { has: myId } }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+    return res.status(200).json({ success: true, data: mediaMessages });
+  } catch (error) {
+    console.error("Error in getSharedMediaConversation: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 export const getMessageByUserId = async (req, res) => {
   try {
     const { id: userToChatId } = req.params;

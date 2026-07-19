@@ -25,6 +25,7 @@ export const searchUsers = async (req, res) => {
         name: true,
         email: true,
         profilePic: true,
+        lastSeen: true,
       },
       take: 10, // Limit results
     });
@@ -53,7 +54,7 @@ export const addContact = async (req, res) => {
         alias
       },
       include: {
-        user: { select: { id: true, name: true, profilePic: true, email: true } }
+        user: { select: { id: true, name: true, profilePic: true, email: true, lastSeen: true } }
       }
     });
 

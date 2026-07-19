@@ -3,12 +3,13 @@ import { useChatStore } from '../store/useChatStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { Send, Image, MoreVertical, MessageSquare, Check, CheckCheck, ArrowLeft, FileText, UserPlus, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
-import { Search, Star, Copy, Trash, Forward, X, CheckSquare, Square } from 'lucide-react';
+import { Search, Star, Copy, Trash, Forward, X, CheckSquare, Square, Image as ImageIcon } from 'lucide-react';
 import ForwardMessageModal from './ForwardMessageModal';
 import BackgroundSelector from './BackgroundSelector';
+import SharedMediaModal from './SharedMediaModal';
 
 const ChatWindow = () => {
-  const { contacts, messages, getMessages, sendMessage, deleteMessage, toggleFavoriteContact, selectedUser, setSelectedUser, isMessagesLoading, onlineUsers, socket, setIsAddContactOpen } = useChatStore();
+  const { contacts, messages, getMessages, sendMessage, deleteMessage, toggleFavoriteContact, selectedUser, setSelectedUser, isMessagesLoading, onlineUsers, socket, setIsAddContactOpen, markConversationAsRead, pendingMessage } = useChatStore();
   const { authUser } = useAuthStore();
   const [text, setText] = useState('');
   const [imagePreview, setImagePreview] = useState(null);
@@ -18,6 +19,7 @@ const ChatWindow = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMessage, setSelectedMessage] = useState(null);
+  const [fullscreenImage, setFullscreenImage] = useState(null);
   
   // Select Mode State
   const [isSelectMode, setIsSelectMode] = useState(false);
@@ -25,6 +27,7 @@ const ChatWindow = () => {
   const [isMultiDeleteOpen, setIsMultiDeleteOpen] = useState(false);
   
   const [isForwardOpen, setIsForwardOpen] = useState(false);
+  const [isSharedMediaOpen, setIsSharedMediaOpen] = useState(false);
   
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -36,8 +39,9 @@ const ChatWindow = () => {
   useEffect(() => {
     if (selectedUser) {
       getMessages(selectedUser.id);
+      markConversationAsRead?.(selectedUser.id);
     }
-  }, [selectedUser, getMessages]);
+  }, [selectedUser?.id, getMessages, markConversationAsRead]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -243,6 +247,7 @@ const ChatWindow = () => {
                   </button>
                 </li>
               )}
+              <li><button onClick={() => setIsSharedMediaOpen(true)}><ImageIcon size={16} /> Shared Media</button></li>
               <li><button onClick={() => setIsSearching(!isSearching)}><Search size={16} /> Search Chat</button></li>
               <li>
                 <button onClick={() => {
@@ -296,12 +301,28 @@ const ChatWindow = () => {
                   onClick={() => {
                     if (isSelectMode) {
                       handleToggleSelectMessage(msg.id);
-                    } else {
+                    }
+                  }}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    if (!isSelectMode) {
                       setSelectedMessage(msg);
                     }
                   }}
                 >
-                  {msg.image && <img src={msg.image} alt="Attachment" className="max-w-xs rounded-lg mb-2" />}
+                  {msg.image && (
+                    <img 
+                      src={msg.image} 
+                      alt="Attachment" 
+                      className="max-w-xs rounded-lg mb-2 hover:brightness-95 transition-all" 
+                      onClick={(e) => {
+                        if (!isSelectMode) {
+                          e.stopPropagation();
+                          setFullscreenImage(msg.image);
+                        }
+                      }}
+                    />
+                  )}
                   {msg.text && <p>{msg.text}</p>}
                 </div>
 
@@ -321,6 +342,25 @@ const ChatWindow = () => {
               </div>
             );
           })
+        )}
+        
+        {pendingMessage && pendingMessage.receiverId === selectedUser.id && (
+          <div className="chat chat-end group items-center animate-fade-in">
+            <div className="chat-bubble shadow-md relative chat-bubble-primary text-primary-content opacity-80">
+              {pendingMessage.image && (
+                <div className="relative">
+                   <img src={pendingMessage.image} alt="Uploading" className="max-w-xs rounded-lg mb-2 blur-[2px]" />
+                   <div className="absolute inset-0 flex items-center justify-center">
+                     <span className="loading loading-spinner loading-md text-base-100"></span>
+                   </div>
+                </div>
+              )}
+              {pendingMessage.text && <p>{pendingMessage.text}</p>}
+            </div>
+            <div className="chat-footer opacity-50 text-xs mt-1 flex items-center justify-end">
+              sending...
+            </div>
+          </div>
         )}
         <div ref={messagesEndRef} />
       </div>
@@ -521,6 +561,22 @@ const ChatWindow = () => {
           onClose={() => setIsForwardOpen(false)}
           messageData={{ text: selectedMessage.text, image: selectedMessage.image }}
         />
+      )}
+
+      {/* Shared Media Modal */}
+      <SharedMediaModal 
+        isOpen={isSharedMediaOpen} 
+        onClose={() => setIsSharedMediaOpen(false)} 
+      />
+
+      {/* Fullscreen Image Modal */}
+      {fullscreenImage && (
+        <div className="fixed inset-0 z-[70] flex justify-center items-center bg-black/90 backdrop-blur-sm animate-fade-in" onClick={() => setFullscreenImage(null)}>
+          <button className="absolute top-4 right-4 btn btn-circle btn-ghost text-white hover:bg-white/20" onClick={() => setFullscreenImage(null)}>
+            <X size={24} />
+          </button>
+          <img src={fullscreenImage} alt="Fullscreen" className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg animate-scale-in" onClick={e => e.stopPropagation()} />
+        </div>
       )}
     </div>
   );

@@ -4,7 +4,9 @@ import { authMiddleware } from "../middlewares/auth.middleware.js";
 import {
   getMessageByUserId,
   sendMessage,
-  deleteMessage
+  deleteMessage,
+  getSharedMediaGlobal,
+  getSharedMediaConversation
 } from "../controllers/message.controller.js";
 
 const router = express.Router();
@@ -16,6 +18,12 @@ router.use(standardLimiter);
 router.use(authMiddleware);
 
 // --- Messages ---
+// Get all shared media for the user globally
+router.get("/media/global", getSharedMediaGlobal);
+
+// Get shared media for a specific conversation
+router.get("/media/:id", getSharedMediaConversation);
+
 // Get message history with a specific user
 router.get("/:id", getMessageByUserId);
 

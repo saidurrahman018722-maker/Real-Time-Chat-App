@@ -15,7 +15,7 @@ export const getConversations = async (req, res) => {
       include: {
         participants: {
           where: { id: { not: loggedInUserId } },
-          select: { id: true, name: true, profilePic: true },
+          select: { id: true, name: true, profilePic: true, lastSeen: true },
         },
       },
     });
