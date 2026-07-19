@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useChatStore } from '../store/useChatStore';
 import { useAuthStore } from '../store/useAuthStore';
-import { Send, Image, MoreVertical, MessageSquare, Check, CheckCheck, ArrowLeft, FileText, UserPlus, Sparkles, Plus, User, X, Search, Star, Copy, Trash, Forward, CheckSquare, Square, Image as ImageIcon, Pin, ChevronDown, Ban } from 'lucide-react';
+import { Send, Image, MoreVertical, MessageSquare, Check, CheckCheck, ArrowLeft, FileText, UserPlus, Sparkles, Plus, User, X, Search, Star, Copy, Trash, Forward, CheckSquare, Square, Image as ImageIcon, Pin, ChevronDown, Ban, Camera } from 'lucide-react';
 import { format } from 'date-fns';
 import ForwardMessageModal from './ForwardMessageModal';
 import BackgroundSelector from './BackgroundSelector';
