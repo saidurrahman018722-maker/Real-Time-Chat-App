@@ -133,7 +133,8 @@ exports.Prisma.ConversationScalarFieldEnum = {
   lastMessageId: 'lastMessageId',
   updatedAt: 'updatedAt',
   createdAt: 'createdAt',
-  deletedBy: 'deletedBy'
+  deletedBy: 'deletedBy',
+  pinnedBy: 'pinnedBy'
 };
 
 exports.Prisma.SortOrder = {

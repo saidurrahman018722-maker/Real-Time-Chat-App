@@ -9,7 +9,7 @@ import BackgroundSelector from './BackgroundSelector';
 import SharedMediaModal from './SharedMediaModal';
 
 const ChatWindow = () => {
-  const { contacts, messages, getMessages, sendMessage, deleteMessage, toggleFavoriteContact, selectedUser, setSelectedUser, isMessagesLoading, onlineUsers, socket, setIsAddContactOpen, markConversationAsRead, pendingMessage } = useChatStore();
+  const { contacts, messages, getMessages, sendMessage, deleteMessage, toggleFavoriteContact, selectedUser, setSelectedUser, isMessagesLoading, onlineUsers, socket, setIsAddContactOpen, markConversationAsRead, pendingMessage, togglePinMessage } = useChatStore();
   const { authUser } = useAuthStore();
   const [text, setText] = useState('');
   const [imagePreview, setImagePreview] = useState(null);
@@ -23,8 +23,11 @@ const ChatWindow = () => {
   
   // Select Mode State
   const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectAction, setSelectAction] = useState(null); // 'delete' | 'forward'
   const [selectedMessageIds, setSelectedMessageIds] = useState([]);
   const [isMultiDeleteOpen, setIsMultiDeleteOpen] = useState(false);
+
+  const [replyingToMessage, setReplyingToMessage] = useState(null);
 
   const [isForwardOpen, setIsForwardOpen] = useState(false);
   const [isSharedMediaOpen, setIsSharedMediaOpen] = useState(false);
@@ -97,9 +100,10 @@ const ChatWindow = () => {
   const handleSend = (e) => {
     e.preventDefault();
     if (!text.trim() && !imagePreview) return;
-    sendMessage({ text: text.trim(), image: imagePreview });
+    sendMessage({ text: text.trim(), image: imagePreview, replyToId: replyingToMessage?.id });
     setText('');
     setImagePreview(null);
+    setReplyingToMessage(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
     setIsTyping(false);
     socket?.emit('typing', { receiverId: selectedUser.id, isTyping: false });
@@ -199,66 +203,113 @@ const ChatWindow = () => {
 
   return (
     <div className={`flex-1 flex flex-col bg-cover bg-center transition-all duration-300 ${chatBg}`}>
-      <div className="h-16 flex items-center justify-between px-6 bg-base-100/90 backdrop-blur-md border-b border-base-300 shadow-sm z-10">
-        <div className="flex items-center gap-3">
-          <button
-            className="md:hidden btn btn-ghost btn-circle btn-sm mr-1"
-            onClick={() => setSelectedUser(null)}
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <div className="avatar placeholder relative">
-            {selectedUser.profilePic ? (
-              <div className="w-10 rounded-full">
-                <img src={selectedUser.profilePic} alt={selectedUser.name} />
-              </div>
-            ) : (
-              <div className="bg-neutral text-neutral-content w-10 rounded-full">
-                <span className="text-lg">{selectedUser.name?.charAt(0) || selectedUser.email?.charAt(0)}</span>
-              </div>
-            )}
-            {userPresence === 'online' && (
-              <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-base-100 rounded-full"></span>
-            )}
+      {isSelectMode ? (
+        <div className="h-16 flex items-center justify-between px-6 bg-base-100/90 backdrop-blur-md border-b border-base-300 shadow-sm z-10 animate-fade-in">
+          <div className="flex items-center gap-4">
+            <button
+              className="btn btn-ghost btn-circle btn-sm"
+              onClick={() => {
+                setIsSelectMode(false);
+                setSelectedMessageIds([]);
+                setSelectAction(null);
+              }}
+            >
+              <X size={20} />
+            </button>
+            <span className="font-semibold text-lg">{selectedMessageIds.length} Selected</span>
           </div>
           <div>
-            <h3 className="font-semibold leading-tight flex items-center gap-2">
-              {selectedUser.name || selectedUser.email}
-              {isFavorite && <Star size={14} className="text-warning fill-warning" />}
-            </h3>
-            <p className="text-xs text-base-content/60">{remoteTyping ? <span className="text-primary italic">typing...</span> : statusText}</p>
+            {selectAction === 'delete' ? (
+              <button 
+                className="btn btn-error btn-sm gap-2"
+                disabled={selectedMessageIds.length === 0}
+                onClick={() => setIsMultiDeleteOpen(true)}
+              >
+                <Trash size={16} /> Delete
+              </button>
+            ) : (
+              <button 
+                className="btn btn-primary btn-sm gap-2"
+                disabled={selectedMessageIds.length === 0}
+                onClick={() => setIsForwardOpen(true)}
+              >
+                <Forward size={16} /> Forward
+              </button>
+            )}
           </div>
         </div>
-        <div className="flex gap-2 items-center">
-          <div className="dropdown dropdown-end">
-            <label tabIndex={0} className="btn btn-ghost btn-circle btn-sm">
-              <MoreVertical size={20} />
-            </label>
-            <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52 mt-4">
-              {currentContact && (
+      ) : (
+        <div className="h-16 flex items-center justify-between px-6 bg-base-100/90 backdrop-blur-md border-b border-base-300 shadow-sm z-10">
+          <div className="flex items-center gap-3">
+            <button
+              className="md:hidden btn btn-ghost btn-circle btn-sm mr-1"
+              onClick={() => setSelectedUser(null)}
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <div className="avatar placeholder relative">
+              {selectedUser.profilePic ? (
+                <div className="w-10 rounded-full">
+                  <img src={selectedUser.profilePic} alt={selectedUser.name} />
+                </div>
+              ) : (
+                <div className="bg-neutral text-neutral-content w-10 rounded-full">
+                  <span className="text-lg">{selectedUser.name?.charAt(0) || selectedUser.email?.charAt(0)}</span>
+                </div>
+              )}
+              {userPresence === 'online' && (
+                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-base-100 rounded-full"></span>
+              )}
+            </div>
+            <div>
+              <h3 className="font-semibold leading-tight flex items-center gap-2">
+                {selectedUser.name || selectedUser.email}
+                {isFavorite && <Star size={14} className="text-warning fill-warning" />}
+              </h3>
+              <p className="text-xs text-base-content/60">{remoteTyping ? <span className="text-primary italic">typing...</span> : statusText}</p>
+            </div>
+          </div>
+          <div className="flex gap-2 items-center">
+            <div className="dropdown dropdown-end">
+              <label tabIndex={0} className="btn btn-ghost btn-circle btn-sm">
+                <MoreVertical size={20} />
+              </label>
+              <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52 mt-4">
+                {currentContact && (
+                  <li>
+                    <button onClick={() => toggleFavoriteContact(currentContact.id)}>
+                      <Star size={16} className={isFavorite ? 'text-warning fill-warning' : ''} />
+                      {isFavorite ? 'Remove from Favorites' : 'Add to Favorite'}
+                    </button>
+                  </li>
+                )}
+                <li><button onClick={() => setIsSharedMediaOpen(true)}><ImageIcon size={16} /> Shared Media</button></li>
+                <li><button onClick={() => setIsSearching(!isSearching)}><Search size={16} /> Search Chat</button></li>
                 <li>
-                  <button onClick={() => toggleFavoriteContact(currentContact.id)}>
-                    <Star size={16} className={isFavorite ? 'text-warning fill-warning' : ''} />
-                    {isFavorite ? 'Remove from Favorites' : 'Add to Favorite'}
+                  <button onClick={() => {
+                    setIsSelectMode(true);
+                    setSelectAction('forward');
+                    setSelectedMessageIds([]);
+                  }}>
+                    <Forward size={16} /> Forward Messages
                   </button>
                 </li>
-              )}
-              <li><button onClick={() => setIsSharedMediaOpen(true)}><ImageIcon size={16} /> Shared Media</button></li>
-              <li><button onClick={() => setIsSearching(!isSearching)}><Search size={16} /> Search Chat</button></li>
-              <li>
-                <button onClick={() => {
-                  setIsSelectMode(!isSelectMode);
-                  setSelectedMessageIds([]);
-                }}>
-                  <CheckSquare size={16} /> {isSelectMode ? 'Cancel Selection' : 'Select Messages'}
-                </button>
-              </li>
-              <div className="divider my-0"></div>
-              <li><button onClick={() => setSelectedUser(null)} className="text-error"><X size={16} /> Close Chat</button></li>
-            </ul>
+                <li>
+                  <button onClick={() => {
+                    setIsSelectMode(true);
+                    setSelectAction('delete');
+                    setSelectedMessageIds([]);
+                  }}>
+                    <Trash size={16} /> Delete Messages
+                  </button>
+                </li>
+                <div className="divider my-0"></div>
+                <li><button onClick={() => setSelectedUser(null)} className="text-error"><X size={16} /> Close Chat</button></li>
+              </ul>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {isSearching && (
         <div className="px-6 py-2 bg-base-200 border-b border-base-300 animate-slide-down flex items-center gap-2">
@@ -292,34 +343,80 @@ const ChatWindow = () => {
                   </button>
                 )}
 
-                <div
-                  className={`chat-bubble shadow-md relative cursor-pointer hover:opacity-90 transition-opacity ${isMine ? 'chat-bubble-primary text-primary-content' : 'bg-base-100 text-base-content'} ${isSelectMode && selectedMessageIds.includes(msg.id) ? 'ring-2 ring-primary ring-offset-2 ring-offset-base-100' : ''}`}
-                  onClick={() => {
-                    if (isSelectMode) {
-                      handleToggleSelectMessage(msg.id);
-                    }
-                  }}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    if (!isSelectMode) {
-                      setSelectedMessage(msg);
-                    }
-                  }}
-                >
-                  {msg.image && (
-                    <img 
-                      src={msg.image} 
-                      alt="Attachment" 
-                      className="max-w-xs rounded-lg mb-2 hover:brightness-95 transition-all" 
-                      onClick={(e) => {
-                        if (!isSelectMode) {
-                          e.stopPropagation();
-                          setFullscreenImage(msg.image);
-                        }
-                      }}
-                    />
+                <div className="relative group/bubble flex items-center">
+                  {!isMine && !isSelectMode && (
+                    <div className="opacity-0 group-hover/bubble:opacity-100 transition-opacity absolute -right-16 flex gap-1">
+                      <button className="btn btn-ghost btn-xs btn-circle" onClick={() => setReplyingToMessage(msg)} title="Reply">
+                        <MessageSquare size={14} />
+                      </button>
+                      <button className="btn btn-ghost btn-xs btn-circle" onClick={() => togglePinMessage(msg.id)} title={msg.isPinned ? "Unpin" : "Pin"}>
+                        <Pin size={14} className={msg.isPinned ? 'fill-current' : ''} />
+                      </button>
+                    </div>
                   )}
-                  {msg.text && <p>{msg.text}</p>}
+
+                  <div
+                    className={`chat-bubble shadow-md relative cursor-pointer hover:opacity-90 transition-opacity ${isMine ? 'chat-bubble-primary text-primary-content' : 'bg-base-100 text-base-content'} ${isSelectMode && selectedMessageIds.includes(msg.id) ? 'ring-2 ring-primary ring-offset-2 ring-offset-base-100' : ''}`}
+                    onClick={() => {
+                      if (isSelectMode) {
+                        handleToggleSelectMessage(msg.id);
+                      }
+                    }}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      if (!isSelectMode) {
+                        setSelectedMessage(msg);
+                      }
+                    }}
+                  >
+                    {msg.isPinned && (
+                      <Pin size={12} className="absolute -top-1 -right-1 text-base-content/50 bg-base-200 rounded-full p-0.5" />
+                    )}
+                    {msg.isForwarded && (
+                      <div className="flex items-center gap-1 text-[10px] opacity-70 mb-1 italic">
+                        <Forward size={10} /> Forwarded
+                      </div>
+                    )}
+                    {msg.replyTo && (
+                      <div 
+                        className={`text-xs p-2 rounded mb-2 border-l-4 cursor-pointer ${isMine ? 'bg-primary-focus border-base-100/50' : 'bg-base-200 border-primary'}`}
+                        onClick={() => {
+                          // Scroll to message (optional)
+                        }}
+                      >
+                        <span className="font-semibold block opacity-80 mb-0.5">
+                          {msg.replyTo.senderId === authUser.id ? 'You' : currentContact?.alias || selectedUser.name}
+                        </span>
+                        <span className="opacity-70 line-clamp-1">{msg.replyTo.text || 'Photo'}</span>
+                      </div>
+                    )}
+
+                    {msg.image && (
+                      <img 
+                        src={msg.image} 
+                        alt="Attachment" 
+                        className="max-w-xs rounded-lg mb-2 hover:brightness-95 transition-all" 
+                        onClick={(e) => {
+                          if (!isSelectMode) {
+                            e.stopPropagation();
+                            setFullscreenImage(msg.image);
+                          }
+                        }}
+                      />
+                    )}
+                    {msg.text && <p>{msg.text}</p>}
+                  </div>
+
+                  {isMine && !isSelectMode && (
+                    <div className="opacity-0 group-hover/bubble:opacity-100 transition-opacity absolute -left-16 flex gap-1">
+                      <button className="btn btn-ghost btn-xs btn-circle" onClick={() => setReplyingToMessage(msg)} title="Reply">
+                        <MessageSquare size={14} />
+                      </button>
+                      <button className="btn btn-ghost btn-xs btn-circle" onClick={() => togglePinMessage(msg.id)} title={msg.isPinned ? "Unpin" : "Pin"}>
+                        <Pin size={14} className={msg.isPinned ? 'fill-current' : ''} />
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {isSelectMode && isMine && (
@@ -376,52 +473,19 @@ const ChatWindow = () => {
         </div>
       )}
 
-      {isSelectMode ? (
-        <div className="p-4 bg-base-100/90 backdrop-blur-md border-t border-base-300 flex items-center justify-between shadow-lg">
-          <span className="font-semibold text-primary">{selectedMessageIds.length} selected</span>
-          <div className="flex gap-2">
-            <button
-              className="btn btn-ghost btn-sm tooltip tooltip-top"
-              data-tip="Copy"
-              onClick={handleCopySelected}
-              disabled={selectedMessageIds.length === 0}
-            >
-              <Copy size={20} />
-            </button>
-            <button
-              className="btn btn-ghost btn-sm tooltip tooltip-top"
-              data-tip="Forward"
-              onClick={() => {
-                const combinedText = messages.filter(m => selectedMessageIds.includes(m.id) && m.text).map(m => m.text).join('\n\n');
-                const firstImage = messages.find(m => selectedMessageIds.includes(m.id) && m.image)?.image;
-                setSelectedMessage({ text: combinedText, image: firstImage });
-                setIsForwardOpen(true);
-              }}
-              disabled={selectedMessageIds.length === 0}
-            >
-              <Forward size={20} />
-            </button>
-            <button
-              className="btn btn-ghost btn-sm text-error tooltip tooltip-top"
-              data-tip="Delete"
-              onClick={() => setIsMultiDeleteOpen(true)}
-              disabled={selectedMessageIds.length === 0}
-            >
-              <Trash size={20} />
-            </button>
-            <div className="divider divider-horizontal mx-0"></div>
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={() => {
-                setIsSelectMode(false);
-                setSelectedMessageIds([]);
-              }}
-            >
-              Cancel
-            </button>
+      {replyingToMessage && (
+        <div className="px-4 py-2 bg-base-200 border-t border-base-300 relative flex items-center justify-between">
+          <div className="flex-1 border-l-4 border-primary pl-3">
+            <span className="font-semibold text-xs text-primary block mb-0.5">
+              Replying to {replyingToMessage.senderId === authUser.id ? 'yourself' : selectedUser.name}
+            </span>
+            <span className="text-sm text-base-content/70 line-clamp-1">{replyingToMessage.text || 'Photo'}</span>
           </div>
+          <button onClick={() => setReplyingToMessage(null)} className="btn btn-ghost btn-sm btn-circle text-base-content/50 hover:text-base-content">
+            <X size={16} />
+          </button>
         </div>
-      ) : (
+      )}
         <form onSubmit={handleSend} className="p-4 bg-base-100/90 backdrop-blur-md border-t border-base-300 flex items-center gap-2">
           <input
             type="file"
@@ -551,12 +615,49 @@ const ChatWindow = () => {
       )}
 
       {/* Forward Modal */}
-      {isForwardOpen && selectedMessage && (
+      {isForwardOpen && (
         <ForwardMessageModal
           isOpen={isForwardOpen}
-          onClose={() => setIsForwardOpen(false)}
-          messageData={{ text: selectedMessage.text, image: selectedMessage.image }}
+          onClose={() => {
+            setIsForwardOpen(false);
+            if (isSelectMode) {
+              setIsSelectMode(false);
+              setSelectedMessageIds([]);
+            }
+          }}
+          messageIds={isSelectMode ? selectedMessageIds : (selectedMessage ? [selectedMessage.id] : [])}
         />
+      )}
+
+      {/* Multi Delete Modal */}
+      {isMultiDeleteOpen && (
+        <div className="fixed inset-0 z-[60] flex justify-center items-center bg-black/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsMultiDeleteOpen(false)}>
+          <div className="bg-base-100 w-full sm:w-96 rounded-2xl shadow-xl overflow-hidden animate-slide-up p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="font-semibold text-lg mb-4">Delete {selectedMessageIds.length} Messages?</h3>
+            <div className="flex flex-col gap-3">
+              <button
+                className="btn btn-error w-full"
+                onClick={() => handleDeleteSelected(false)}
+              >
+                Delete for me
+              </button>
+              {canDeleteForEveryone && (
+                <button
+                  className="btn btn-error btn-outline w-full"
+                  onClick={() => handleDeleteSelected(true)}
+                >
+                  Delete for everyone
+                </button>
+              )}
+              <button
+                className="btn btn-ghost w-full"
+                onClick={() => setIsMultiDeleteOpen(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Shared Media Modal */}

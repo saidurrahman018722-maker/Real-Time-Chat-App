@@ -6,7 +6,9 @@ import {
   sendMessage,
   deleteMessage,
   getSharedMediaGlobal,
-  getSharedMediaConversation
+  getSharedMediaConversation,
+  togglePinMessage,
+  forwardMessages
 } from "../controllers/message.controller.js";
 
 const router = express.Router();
@@ -29,6 +31,12 @@ router.get("/:id", getMessageByUserId);
 
 // Send a message to a specific user
 router.post("/send/:id", sendMessage);
+
+// Forward messages to a specific user
+router.post("/forward", forwardMessages);
+
+// Toggle pin for a message
+router.put("/:id/pin", togglePinMessage);
 
 // Delete a specific message
 router.delete("/:id", deleteMessage);

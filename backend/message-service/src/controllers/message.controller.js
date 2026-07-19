@@ -71,6 +71,9 @@ export const getMessageByUserId = async (req, res) => {
       take: Number(limit),
       ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
       orderBy: { createdAt: "desc" },
+      include: {
+        replyTo: true
+      }
     });
 
     // Reverse to get chronological order for display
@@ -97,7 +100,7 @@ export const getMessageByUserId = async (req, res) => {
 
 export const sendMessage = async (req, res) => {
   try {
-    const { text, image } = req.body;
+    const { text, image, replyToId, isForwarded } = req.body;
     const { id: receiverId } = req.params;
     const senderId = req.session.userId;
 
@@ -128,8 +131,13 @@ export const sendMessage = async (req, res) => {
         receiverId,
         conversationId: conversation.id,
         text,
-        image: imageUrl
+        image: imageUrl,
+        replyToId: replyToId || null,
+        isForwarded: isForwarded || false
       },
+      include: {
+        replyTo: true
+      }
     });
 
     // 3. Update Conversation updatedAt
@@ -251,96 +259,96 @@ export const getUnreadCounts = async (req, res) => {
   }
 };
 
-export const markAsRead = async (req, res) => {
+export const togglePinMessage = async (req, res) => {
   try {
-    const myId = req.session.userId;
-    const { id: userToChatId } = req.params;
-    const conversationId = [myId, userToChatId].sort().join('_');
+    const { id } = req.params;
+    const userId = req.session.userId;
 
-    const unreadMessages = await prisma.message.findMany({
-      where: {
-        conversationId,
-        receiverId: myId,
-        isRead: false
-      },
-      select: { id: true, senderId: true }
+    const message = await prisma.message.findUnique({ where: { id } });
+
+    if (!message) return res.status(404).json({ error: 'Message not found' });
+
+    // Toggle pin status
+    const updatedMessage = await prisma.message.update({
+      where: { id },
+      data: { isPinned: !message.isPinned }
     });
 
-    if (unreadMessages.length > 0) {
-      await prisma.message.updateMany({
-        where: {
-          conversationId,
-          receiverId: myId,
-          isRead: false
-        },
-        data: {
-          isRead: true
-        }
-      });
-
-      // Emit to sender
-      try {
-        const { io, userSockets } = await import('../../index.js');
-        const senderId = unreadMessages[0].senderId;
-        const senderSocketId = userSockets.get(senderId);
-        
-        if (senderSocketId) {
-          unreadMessages.forEach(msg => {
-            io.to(senderSocketId).emit('messageStatusUpdate', { messageId: msg.id, status: 'READ' });
-          });
-        }
-      } catch (socketErr) {
-        console.error('Socket Emission Error:', socketErr);
-      }
+    // Emit socket event
+    try {
+      const { io, userSockets } = await import('../../index.js');
+      const emitTo = (targetId) => {
+        const socketId = userSockets.get(targetId);
+        if (socketId) io.to(socketId).emit('messagePinned', { messageId: id, isPinned: updatedMessage.isPinned });
+      };
+      emitTo(message.senderId);
+      if (message.receiverId) emitTo(message.receiverId);
+    } catch (socketErr) {
+      console.error('Socket error in togglePinMessage:', socketErr);
     }
 
-    return res.status(200).json({ success: true, message: "Messages marked as read" });
+    return res.status(200).json({ success: true, data: updatedMessage });
   } catch (error) {
-    console.error("Error in markAsRead:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    console.error('Error in togglePinMessage:', error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 };
 
-export const getSharedMediaGlobal = async (req, res) => {
+export const forwardMessages = async (req, res) => {
   try {
-    const myId = req.session.userId;
-    const mediaMessages = await prisma.message.findMany({
-      where: {
-        OR: [
-          { senderId: myId },
-          { receiverId: myId }
-        ],
-        image: { not: null },
-        isDeletedForEveryone: false,
-        NOT: { deletedBy: { has: myId } }
-      },
-      orderBy: { createdAt: "desc" }
-    });
-    return res.status(200).json({ success: true, data: mediaMessages });
-  } catch (error) {
-    console.error("Error in getSharedMediaGlobal:", error);
-    return res.status(500).json({ error: "Internal server error" });
-  }
-};
+    const { messageIds, receiverId } = req.body;
+    const senderId = req.session.userId;
 
-export const getSharedMediaConversation = async (req, res) => {
-  try {
-    const myId = req.session.userId;
-    const { id: userToChatId } = req.params;
-    const conversationId = [myId, userToChatId].sort().join('_');
-
-    const mediaMessages = await prisma.message.findMany({
-      where: {
-        conversationId,
-        image: { not: null },
-        isDeletedForEveryone: false,
-        NOT: { deletedBy: { has: myId } }
-      },
-      orderBy: { createdAt: "desc" }
+    const messagesToForward = await prisma.message.findMany({
+      where: { id: { in: messageIds } }
     });
-    return res.status(200).json({ success: true, data: mediaMessages });
+
+    if (!messagesToForward.length) return res.status(404).json({ error: 'Messages not found' });
+
+    const conversationId = [senderId, receiverId].sort().join('_');
+
+    let conversation = await prisma.conversation.upsert({
+      where: { id: conversationId },
+      update: { deletedBy: [] },
+      create: {
+        id: conversationId,
+        participants: { connect: [{ id: senderId }, { id: receiverId }] }
+      }
+    });
+
+    const newMessagesData = messagesToForward.map(m => ({
+      senderId,
+      receiverId,
+      conversationId: conversation.id,
+      text: m.text,
+      image: m.image,
+      isForwarded: true
+    }));
+
+    const newMessages = await prisma.message.createManyAndReturn({ data: newMessagesData });
+
+    await prisma.conversation.update({
+      where: { id: conversation.id },
+      data: { updatedAt: new Date() }
+    });
+
+    // Try to emit via sockets
+    try {
+      const { io, userSockets } = await import('../../index.js');
+      const receiverSocketId = userSockets.get(receiverId);
+      const senderSocketId = userSockets.get(senderId);
+
+      for (const msg of newMessages) {
+        if (receiverSocketId) io.to(receiverSocketId).emit('newMessage', msg);
+        if (senderSocketId) io.to(senderSocketId).emit('messageStatusUpdate', { messageId: msg.id, status: 'DELIVERED' });
+      }
+    } catch (socketErr) {
+      console.error('Socket error in forwardMessages:', socketErr);
+    }
+
+    return res.status(201).json({ success: true, data: newMessages });
   } catch (error) {
-    console.error("Error in getSharedMediaConversation:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    console.error('Error in forwardMessages:', error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 };

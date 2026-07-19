@@ -97,6 +97,14 @@ export const useChatStore = create((set, get) => ({
       set({ onlineUsers: initialMap });
     });
 
+    newSocket.on('messagePinned', ({ messageId, isPinned }) => {
+      set((state) => ({
+        messages: state.messages.map((msg) =>
+          msg.id === messageId ? { ...msg, isPinned } : msg
+        )
+      }));
+    });
+
     set({ socket: newSocket });
   },
 
@@ -309,20 +317,67 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
-  forwardMessage: async (messageData, receiverId) => {
+  forwardMessages: async (messageIds, receiverId) => {
     try {
-      const res = await axiosInstance.post(`/message/send/${receiverId}`, messageData);
+      const res = await axiosInstance.post(`/message/forward`, { messageIds, receiverId });
       
-      const { selectedUser, messages } = get();
+      const { selectedUser, messages, conversations } = get();
       
       // If we are currently looking at the chat we forwarded to, add it to the view
       if (selectedUser?.id === receiverId) {
-        set({ messages: [...messages, res.data.data] });
+        set({ messages: [...messages, ...res.data.data] });
       }
+
+      // Update conversations list for the sidebar
+      if (res.data.data.length > 0) {
+        const newMsg = res.data.data[0];
+        const exists = conversations.some(c => c.id === newMsg.conversationId);
+        if (!exists) {
+          get().getConversations();
+        } else {
+          const updatedConversations = conversations.map(conv => {
+            if (conv.id === newMsg.conversationId) {
+              return { ...conv, lastMessage: newMsg, updatedAt: new Date().toISOString() };
+            }
+            return conv;
+          });
+          const sortedConversations = updatedConversations.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+          set({ conversations: sortedConversations });
+        }
+      }
+
       return { success: true };
     } catch (error) {
-      console.log('Error forwarding message:', error);
+      console.log('Error forwarding messages:', error);
       return { success: false };
+    }
+  },
+
+  togglePinMessage: async (messageId) => {
+    try {
+      const res = await axiosInstance.put(`/message/${messageId}/pin`);
+      const updatedMessage = res.data.data;
+      set((state) => ({
+        messages: state.messages.map((m) =>
+          m.id === messageId ? { ...m, isPinned: updatedMessage.isPinned } : m
+        ),
+      }));
+    } catch (error) {
+      console.log('Error toggling pin on message:', error);
+    }
+  },
+
+  togglePinConversation: async (conversationId) => {
+    try {
+      const res = await axiosInstance.put(`/conversation/${conversationId}/pin`);
+      const { pinnedBy } = res.data.data;
+      set((state) => ({
+        conversations: state.conversations.map((c) =>
+          c.id === conversationId ? { ...c, pinnedBy } : c
+        ),
+      }));
+    } catch (error) {
+      console.log('Error toggling pin on conversation:', error);
     }
   },
 

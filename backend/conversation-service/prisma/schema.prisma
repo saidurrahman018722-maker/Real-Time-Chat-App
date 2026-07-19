@@ -25,4 +25,5 @@ model Conversation {
   createdAt     DateTime  @default(now())
   
   deletedBy     String[]  @default([])
+  pinnedBy      String[]  @default([])
 }

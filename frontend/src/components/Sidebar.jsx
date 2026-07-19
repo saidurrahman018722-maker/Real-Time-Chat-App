@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useChatStore } from '../store/useChatStore';
 import { useAuthStore } from '../store/useAuthStore';
-import { Search, UserPlus, Settings, MessageSquarePlus, Star, Check, CheckCheck } from 'lucide-react';
+import { Search, UserPlus, Settings, MessageSquarePlus, Star, Check, CheckCheck, Pin } from 'lucide-react';
 import { format } from 'date-fns';
 
 import { Link } from 'react-router-dom';
@@ -10,7 +10,7 @@ import NewChatModal from './NewChatModal';
 
 const Sidebar = () => {
   const { authUser } = useAuthStore();
-  const { contacts, conversations, getConversations, getContacts, selectedUser, setSelectedUser, isConversationsLoading, isAddContactOpen, setIsAddContactOpen, unreadCounts, onlineUsers } = useChatStore();
+  const { contacts, conversations, getConversations, getContacts, selectedUser, setSelectedUser, isConversationsLoading, isAddContactOpen, setIsAddContactOpen, unreadCounts, onlineUsers, togglePinConversation } = useChatStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewChatOpen, setIsNewChatOpen] = useState(false);
 
@@ -22,7 +22,14 @@ const Sidebar = () => {
   const filteredConversations = conversations.filter(conv => 
     (conv.partner?.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
     (conv.partner?.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
-  );
+  ).sort((a, b) => {
+    const isAPinned = a.pinnedBy?.includes(authUser.id) ? 1 : 0;
+    const isBPinned = b.pinnedBy?.includes(authUser.id) ? 1 : 0;
+    if (isAPinned !== isBPinned) {
+      return isBPinned - isAPinned;
+    }
+    return new Date(b.updatedAt) - new Date(a.updatedAt);
+  });
 
   return (
     <aside className={`border-r border-base-300 flex-col bg-base-100 ${selectedUser ? 'hidden md:flex' : 'flex'} w-full md:w-80 transition-all duration-300`}>
@@ -73,6 +80,10 @@ const Sidebar = () => {
               key={conv.id} 
               className={`flex items-center p-4 cursor-pointer hover:bg-base-200 transition-colors border-l-4 ${selectedUser?.id === conv.partner.id ? 'bg-base-200 border-primary' : 'border-transparent'}`}
               onClick={() => setSelectedUser(conv.partner)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                togglePinConversation(conv.id);
+              }}
             >
               <div className="avatar placeholder mr-4 relative">
                 {conv.partner.profilePic ? (
@@ -92,6 +103,9 @@ const Sidebar = () => {
                 <div className="flex justify-between items-baseline mb-1">
                   <div className="flex items-center gap-1 overflow-hidden">
                     <span className="font-semibold truncate">{conv.partner.name}</span>
+                    {conv.pinnedBy?.includes(authUser.id) && (
+                      <Pin size={12} className="text-base-content/50 flex-shrink-0" />
+                    )}
                     {contacts.find(c => c.user?.id === conv.partner.id || c.userId === conv.partner.id)?.isFavorite && (
                       <Star size={12} className="text-warning fill-warning flex-shrink-0" />
                     )}
