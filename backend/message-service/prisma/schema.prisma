@@ -16,6 +16,7 @@ enum MessageStatus {
 model User {
   id         String    @id
   name       String
+  email      String?
   profilePic String?
   lastSeen   DateTime?
 

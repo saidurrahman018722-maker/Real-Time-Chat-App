@@ -45,6 +45,12 @@ const SettingsPage = () => {
     }
   }, [updateMessage]);
 
+  useEffect(() => {
+    if (activeTab === 'media') {
+      getSharedMediaGlobal();
+    }
+  }, [activeTab, getSharedMediaGlobal]);
+
   // Handle clicking outside the mobile dropdown menu
   useEffect(() => {
     const handleClickOutside = (e) => {

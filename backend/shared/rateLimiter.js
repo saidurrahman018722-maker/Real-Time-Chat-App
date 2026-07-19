@@ -88,10 +88,10 @@ export const rateLimiter = (options = {}) => {
 };
 
 // Category 1: Standard
-// 10 requests max, refilling at 1 token per second
+// 100 requests max, refilling at 10 token per second
 export const standardLimiter = rateLimiter({
-  capacity: 10,
-  rate: 1,
+  capacity: 100,
+  rate: 10,
   prefix: "standard",
 });
 

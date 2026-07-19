@@ -1167,6 +1167,7 @@ export namespace Prisma {
   export type UserMinAggregateOutputType = {
     id: string | null
     name: string | null
+    email: string | null
     profilePic: string | null
     lastSeen: Date | null
   }
@@ -1174,6 +1175,7 @@ export namespace Prisma {
   export type UserMaxAggregateOutputType = {
     id: string | null
     name: string | null
+    email: string | null
     profilePic: string | null
     lastSeen: Date | null
   }
@@ -1181,6 +1183,7 @@ export namespace Prisma {
   export type UserCountAggregateOutputType = {
     id: number
     name: number
+    email: number
     profilePic: number
     lastSeen: number
     _all: number
@@ -1190,6 +1193,7 @@ export namespace Prisma {
   export type UserMinAggregateInputType = {
     id?: true
     name?: true
+    email?: true
     profilePic?: true
     lastSeen?: true
   }
@@ -1197,6 +1201,7 @@ export namespace Prisma {
   export type UserMaxAggregateInputType = {
     id?: true
     name?: true
+    email?: true
     profilePic?: true
     lastSeen?: true
   }
@@ -1204,6 +1209,7 @@ export namespace Prisma {
   export type UserCountAggregateInputType = {
     id?: true
     name?: true
+    email?: true
     profilePic?: true
     lastSeen?: true
     _all?: true
@@ -1284,6 +1290,7 @@ export namespace Prisma {
   export type UserGroupByOutputType = {
     id: string
     name: string
+    email: string | null
     profilePic: string | null
     lastSeen: Date | null
     _count: UserCountAggregateOutputType | null
@@ -1308,6 +1315,7 @@ export namespace Prisma {
   export type UserSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     name?: boolean
+    email?: boolean
     profilePic?: boolean
     lastSeen?: boolean
     sentMessages?: boolean | User$sentMessagesArgs<ExtArgs>
@@ -1319,6 +1327,7 @@ export namespace Prisma {
   export type UserSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     name?: boolean
+    email?: boolean
     profilePic?: boolean
     lastSeen?: boolean
   }, ExtArgs["result"]["user"]>
@@ -1326,6 +1335,7 @@ export namespace Prisma {
   export type UserSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     name?: boolean
+    email?: boolean
     profilePic?: boolean
     lastSeen?: boolean
   }, ExtArgs["result"]["user"]>
@@ -1333,6 +1343,7 @@ export namespace Prisma {
   export type UserSelectScalar = {
     id?: boolean
     name?: boolean
+    email?: boolean
     profilePic?: boolean
     lastSeen?: boolean
   }
@@ -1357,6 +1368,7 @@ export namespace Prisma {
     scalars: $Extensions.GetPayloadResult<{
       id: string
       name: string
+      email: string | null
       profilePic: string | null
       lastSeen: Date | null
     }, ExtArgs["result"]["user"]>
@@ -1787,6 +1799,7 @@ export namespace Prisma {
   interface UserFieldRefs {
     readonly id: FieldRef<"User", 'String'>
     readonly name: FieldRef<"User", 'String'>
+    readonly email: FieldRef<"User", 'String'>
     readonly profilePic: FieldRef<"User", 'String'>
     readonly lastSeen: FieldRef<"User", 'DateTime'>
   }
@@ -4682,6 +4695,7 @@ export namespace Prisma {
     NOT?: UserWhereInput | UserWhereInput[]
     id?: StringFilter<"User"> | string
     name?: StringFilter<"User"> | string
+    email?: StringNullableFilter<"User"> | string | null
     profilePic?: StringNullableFilter<"User"> | string | null
     lastSeen?: DateTimeNullableFilter<"User"> | Date | string | null
     sentMessages?: MessageListRelationFilter
@@ -4692,6 +4706,7 @@ export namespace Prisma {
   export type UserOrderByWithRelationInput = {
     id?: SortOrder
     name?: SortOrder
+    email?: SortOrderInput | SortOrder
     profilePic?: SortOrderInput | SortOrder
     lastSeen?: SortOrderInput | SortOrder
     sentMessages?: MessageOrderByRelationAggregateInput
@@ -4705,6 +4720,7 @@ export namespace Prisma {
     OR?: UserWhereInput[]
     NOT?: UserWhereInput | UserWhereInput[]
     name?: StringFilter<"User"> | string
+    email?: StringNullableFilter<"User"> | string | null
     profilePic?: StringNullableFilter<"User"> | string | null
     lastSeen?: DateTimeNullableFilter<"User"> | Date | string | null
     sentMessages?: MessageListRelationFilter
@@ -4715,6 +4731,7 @@ export namespace Prisma {
   export type UserOrderByWithAggregationInput = {
     id?: SortOrder
     name?: SortOrder
+    email?: SortOrderInput | SortOrder
     profilePic?: SortOrderInput | SortOrder
     lastSeen?: SortOrderInput | SortOrder
     _count?: UserCountOrderByAggregateInput
@@ -4728,6 +4745,7 @@ export namespace Prisma {
     NOT?: UserScalarWhereWithAggregatesInput | UserScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"User"> | string
     name?: StringWithAggregatesFilter<"User"> | string
+    email?: StringNullableWithAggregatesFilter<"User"> | string | null
     profilePic?: StringNullableWithAggregatesFilter<"User"> | string | null
     lastSeen?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   }
@@ -4879,6 +4897,7 @@ export namespace Prisma {
   export type UserCreateInput = {
     id: string
     name: string
+    email?: string | null
     profilePic?: string | null
     lastSeen?: Date | string | null
     sentMessages?: MessageCreateNestedManyWithoutSenderInput
@@ -4889,6 +4908,7 @@ export namespace Prisma {
   export type UserUncheckedCreateInput = {
     id: string
     name: string
+    email?: string | null
     profilePic?: string | null
     lastSeen?: Date | string | null
     sentMessages?: MessageUncheckedCreateNestedManyWithoutSenderInput
@@ -4899,6 +4919,7 @@ export namespace Prisma {
   export type UserUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeen?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sentMessages?: MessageUpdateManyWithoutSenderNestedInput
@@ -4909,6 +4930,7 @@ export namespace Prisma {
   export type UserUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeen?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sentMessages?: MessageUncheckedUpdateManyWithoutSenderNestedInput
@@ -4919,6 +4941,7 @@ export namespace Prisma {
   export type UserCreateManyInput = {
     id: string
     name: string
+    email?: string | null
     profilePic?: string | null
     lastSeen?: Date | string | null
   }
@@ -4926,6 +4949,7 @@ export namespace Prisma {
   export type UserUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeen?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
@@ -4933,6 +4957,7 @@ export namespace Prisma {
   export type UserUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeen?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
@@ -5158,6 +5183,7 @@ export namespace Prisma {
   export type UserCountOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
+    email?: SortOrder
     profilePic?: SortOrder
     lastSeen?: SortOrder
   }
@@ -5165,6 +5191,7 @@ export namespace Prisma {
   export type UserMaxOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
+    email?: SortOrder
     profilePic?: SortOrder
     lastSeen?: SortOrder
   }
@@ -5172,6 +5199,7 @@ export namespace Prisma {
   export type UserMinOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
+    email?: SortOrder
     profilePic?: SortOrder
     lastSeen?: SortOrder
   }
@@ -5996,6 +6024,7 @@ export namespace Prisma {
   export type UserCreateWithoutConversationsInput = {
     id: string
     name: string
+    email?: string | null
     profilePic?: string | null
     lastSeen?: Date | string | null
     sentMessages?: MessageCreateNestedManyWithoutSenderInput
@@ -6005,6 +6034,7 @@ export namespace Prisma {
   export type UserUncheckedCreateWithoutConversationsInput = {
     id: string
     name: string
+    email?: string | null
     profilePic?: string | null
     lastSeen?: Date | string | null
     sentMessages?: MessageUncheckedCreateNestedManyWithoutSenderInput
@@ -6074,6 +6104,7 @@ export namespace Prisma {
     NOT?: UserScalarWhereInput | UserScalarWhereInput[]
     id?: StringFilter<"User"> | string
     name?: StringFilter<"User"> | string
+    email?: StringNullableFilter<"User"> | string | null
     profilePic?: StringNullableFilter<"User"> | string | null
     lastSeen?: DateTimeNullableFilter<"User"> | Date | string | null
   }
@@ -6118,6 +6149,7 @@ export namespace Prisma {
   export type UserCreateWithoutSentMessagesInput = {
     id: string
     name: string
+    email?: string | null
     profilePic?: string | null
     lastSeen?: Date | string | null
     receivedMessages?: MessageCreateNestedManyWithoutReceiverInput
@@ -6127,6 +6159,7 @@ export namespace Prisma {
   export type UserUncheckedCreateWithoutSentMessagesInput = {
     id: string
     name: string
+    email?: string | null
     profilePic?: string | null
     lastSeen?: Date | string | null
     receivedMessages?: MessageUncheckedCreateNestedManyWithoutReceiverInput
@@ -6141,6 +6174,7 @@ export namespace Prisma {
   export type UserCreateWithoutReceivedMessagesInput = {
     id: string
     name: string
+    email?: string | null
     profilePic?: string | null
     lastSeen?: Date | string | null
     sentMessages?: MessageCreateNestedManyWithoutSenderInput
@@ -6150,6 +6184,7 @@ export namespace Prisma {
   export type UserUncheckedCreateWithoutReceivedMessagesInput = {
     id: string
     name: string
+    email?: string | null
     profilePic?: string | null
     lastSeen?: Date | string | null
     sentMessages?: MessageUncheckedCreateNestedManyWithoutSenderInput
@@ -6202,6 +6237,7 @@ export namespace Prisma {
   export type UserUpdateWithoutSentMessagesInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeen?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     receivedMessages?: MessageUpdateManyWithoutReceiverNestedInput
@@ -6211,6 +6247,7 @@ export namespace Prisma {
   export type UserUncheckedUpdateWithoutSentMessagesInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeen?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     receivedMessages?: MessageUncheckedUpdateManyWithoutReceiverNestedInput
@@ -6231,6 +6268,7 @@ export namespace Prisma {
   export type UserUpdateWithoutReceivedMessagesInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeen?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sentMessages?: MessageUpdateManyWithoutSenderNestedInput
@@ -6240,6 +6278,7 @@ export namespace Prisma {
   export type UserUncheckedUpdateWithoutReceivedMessagesInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeen?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sentMessages?: MessageUncheckedUpdateManyWithoutSenderNestedInput
@@ -6389,6 +6428,7 @@ export namespace Prisma {
   export type UserUpdateWithoutConversationsInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeen?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sentMessages?: MessageUpdateManyWithoutSenderNestedInput
@@ -6398,6 +6438,7 @@ export namespace Prisma {
   export type UserUncheckedUpdateWithoutConversationsInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeen?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sentMessages?: MessageUncheckedUpdateManyWithoutSenderNestedInput
@@ -6407,6 +6448,7 @@ export namespace Prisma {
   export type UserUncheckedUpdateManyWithoutConversationsInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeen?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }

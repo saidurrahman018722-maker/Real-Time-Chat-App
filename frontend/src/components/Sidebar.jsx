@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useChatStore } from '../store/useChatStore';
-import { Search, UserPlus, Settings, MessageSquarePlus, Star } from 'lucide-react';
+import { useAuthStore } from '../store/useAuthStore';
+import { Search, UserPlus, Settings, MessageSquarePlus, Star, Check, CheckCheck } from 'lucide-react';
 import { format } from 'date-fns';
 
 import { Link } from 'react-router-dom';
@@ -8,7 +9,8 @@ import AddContactModal from './AddContactModal';
 import NewChatModal from './NewChatModal';
 
 const Sidebar = () => {
-  const { contacts, conversations, getConversations, getContacts, selectedUser, setSelectedUser, isConversationsLoading, isAddContactOpen, setIsAddContactOpen } = useChatStore();
+  const { authUser } = useAuthStore();
+  const { contacts, conversations, getConversations, getContacts, selectedUser, setSelectedUser, isConversationsLoading, isAddContactOpen, setIsAddContactOpen, unreadCounts, onlineUsers } = useChatStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewChatOpen, setIsNewChatOpen] = useState(false);
 
@@ -18,8 +20,8 @@ const Sidebar = () => {
   }, [getConversations, getContacts]);
 
   const filteredConversations = conversations.filter(conv => 
-    conv.partner.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conv.partner.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (conv.partner?.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (conv.partner?.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -72,7 +74,7 @@ const Sidebar = () => {
               className={`flex items-center p-4 cursor-pointer hover:bg-base-200 transition-colors border-l-4 ${selectedUser?.id === conv.partner.id ? 'bg-base-200 border-primary' : 'border-transparent'}`}
               onClick={() => setSelectedUser(conv.partner)}
             >
-              <div className="avatar placeholder mr-4">
+              <div className="avatar placeholder mr-4 relative">
                 {conv.partner.profilePic ? (
                   <div className="w-12 rounded-full">
                     <img src={conv.partner.profilePic} alt={conv.partner.name} />
@@ -81,6 +83,9 @@ const Sidebar = () => {
                   <div className="bg-neutral text-neutral-content w-12 rounded-full">
                     <span className="text-lg">{conv.partner.name.charAt(0)}</span>
                   </div>
+                )}
+                {(onlineUsers[conv.partner.id] === 'online' || conv.partner.lastSeen === 'online') && (
+                  <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-base-100 rounded-full z-10"></span>
                 )}
               </div>
               <div className="flex-1 min-w-0">
@@ -95,8 +100,28 @@ const Sidebar = () => {
                     {conv.updatedAt ? format(new Date(conv.updatedAt), 'HH:mm') : ''}
                   </span>
                 </div>
-                <div className="text-sm text-base-content/60 truncate">
-                  {conv.lastMessage?.text || 'Started a conversation'}
+                <div className="flex justify-between items-center mt-1">
+                  <div className="text-sm text-base-content/60 truncate flex-1 flex items-center">
+                    {conv.lastMessage?.senderId === authUser.id && (
+                       (conv.lastMessage.isRead || conv.lastMessage.status === 'READ') ? 
+                       <CheckCheck size={14} className="text-blue-500 mr-1 flex-shrink-0" /> : 
+                       <Check size={14} className="text-base-content/50 mr-1 flex-shrink-0" />
+                    )}
+                    <span className="truncate flex items-center">
+                      {conv.lastMessage?.text ? (
+                        conv.lastMessage.text
+                      ) : conv.lastMessage?.image ? (
+                        <><img src={conv.lastMessage.image} alt="Image" className="h-5 w-5 object-cover rounded mr-1" /> Photo</>
+                      ) : (
+                        'Started a conversation'
+                      )}
+                    </span>
+                  </div>
+                  {unreadCounts[conv.id] > 0 && (
+                    <div className="badge badge-primary badge-sm ml-2 font-bold shrink-0">
+                      {unreadCounts[conv.id]}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

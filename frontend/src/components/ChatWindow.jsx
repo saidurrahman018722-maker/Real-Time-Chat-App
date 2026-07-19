@@ -25,7 +25,7 @@ const ChatWindow = () => {
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedMessageIds, setSelectedMessageIds] = useState([]);
   const [isMultiDeleteOpen, setIsMultiDeleteOpen] = useState(false);
-  
+
   const [isForwardOpen, setIsForwardOpen] = useState(false);
   const [isSharedMediaOpen, setIsSharedMediaOpen] = useState(false);
   
@@ -71,14 +71,14 @@ const ChatWindow = () => {
 
   const handleTyping = (e) => {
     setText(e.target.value);
-    
+
     if (!isTyping) {
       setIsTyping(true);
       socket?.emit('typing', { receiverId: selectedUser.id, isTyping: true });
     }
 
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    
+
     typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(false);
       socket?.emit('typing', { receiverId: selectedUser.id, isTyping: false });
@@ -100,28 +100,26 @@ const ChatWindow = () => {
     sendMessage({ text: text.trim(), image: imagePreview });
     setText('');
     setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
     setIsTyping(false);
     socket?.emit('typing', { receiverId: selectedUser.id, isTyping: false });
   };
 
   const renderMessageStatus = (msg) => {
     if (msg.senderId !== authUser.id) return null;
-    
-    if (msg.status === 'SENT') {
-      return <Check size={14} className="text-base-content/50 ml-1" />;
-    } else if (msg.status === 'DELIVERED') {
-      return <CheckCheck size={14} className="text-base-content/50 ml-1" />;
-    } else if (msg.status === 'READ') {
+
+    if (msg.isRead || msg.status === 'READ') {
       return <CheckCheck size={14} className="text-blue-500 ml-1" />;
     }
-    return null;
+
+    return <Check size={14} className="text-base-content/50 ml-1" />;
   };
 
   if (!selectedUser) {
     return (
       <div className="hidden md:flex flex-1 flex-col items-center justify-center bg-base-200 text-base-content">
         <div className="flex gap-8 animate-slide-up mt-8">
-          
+
           <div className="flex flex-col items-center gap-3 group cursor-pointer" onClick={() => alert('Send document feature coming soon!')}>
             <div className="bg-base-300 w-16 h-16 rounded-full flex items-center justify-center group-hover:bg-base-300/80 transition-colors">
               <FileText size={28} />
@@ -161,7 +159,7 @@ const ChatWindow = () => {
     }
   }
 
-  const displayedMessages = messages.filter(msg => 
+  const displayedMessages = messages.filter(msg =>
     !searchQuery || msg.text?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -203,7 +201,7 @@ const ChatWindow = () => {
     <div className={`flex-1 flex flex-col bg-cover bg-center transition-all duration-300 ${chatBg}`}>
       <div className="h-16 flex items-center justify-between px-6 bg-base-100/90 backdrop-blur-md border-b border-base-300 shadow-sm z-10">
         <div className="flex items-center gap-3">
-          <button 
+          <button
             className="md:hidden btn btn-ghost btn-circle btn-sm mr-1"
             onClick={() => setSelectedUser(null)}
           >
@@ -232,8 +230,6 @@ const ChatWindow = () => {
           </div>
         </div>
         <div className="flex gap-2 items-center">
-          <BackgroundSelector conversationId={selectedUser.id} />
-          
           <div className="dropdown dropdown-end">
             <label tabIndex={0} className="btn btn-ghost btn-circle btn-sm">
               <MoreVertical size={20} />
@@ -267,15 +263,15 @@ const ChatWindow = () => {
       {isSearching && (
         <div className="px-6 py-2 bg-base-200 border-b border-base-300 animate-slide-down flex items-center gap-2">
           <Search size={16} className="text-base-content/50" />
-          <input 
-            type="text" 
-            placeholder="Search messages..." 
+          <input
+            type="text"
+            placeholder="Search messages..."
             className="input input-sm input-ghost w-full focus:outline-none focus:bg-transparent px-0"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             autoFocus
           />
-          <button onClick={() => { setIsSearching(false); setSearchQuery(''); }} className="btn btn-ghost btn-sm btn-circle"><X size={16}/></button>
+          <button onClick={() => { setIsSearching(false); setSearchQuery(''); }} className="btn btn-ghost btn-sm btn-circle"><X size={16} /></button>
         </div>
       )}
 
@@ -288,15 +284,15 @@ const ChatWindow = () => {
             return (
               <div key={msg.id || idx} className={`chat ${isMine ? 'chat-end' : 'chat-start'} group items-center`}>
                 {isSelectMode && !isMine && (
-                  <button 
+                  <button
                     className="mr-2 text-base-content/50 hover:text-primary transition-colors"
                     onClick={() => handleToggleSelectMessage(msg.id)}
                   >
                     {selectedMessageIds.includes(msg.id) ? <CheckSquare className="text-primary" size={20} /> : <Square size={20} />}
                   </button>
                 )}
-                
-                <div 
+
+                <div
                   className={`chat-bubble shadow-md relative cursor-pointer hover:opacity-90 transition-opacity ${isMine ? 'chat-bubble-primary text-primary-content' : 'bg-base-100 text-base-content'} ${isSelectMode && selectedMessageIds.includes(msg.id) ? 'ring-2 ring-primary ring-offset-2 ring-offset-base-100' : ''}`}
                   onClick={() => {
                     if (isSelectMode) {
@@ -327,7 +323,7 @@ const ChatWindow = () => {
                 </div>
 
                 {isSelectMode && isMine && (
-                  <button 
+                  <button
                     className="ml-2 text-base-content/50 hover:text-primary transition-colors"
                     onClick={() => handleToggleSelectMessage(msg.id)}
                   >
@@ -369,8 +365,8 @@ const ChatWindow = () => {
         <div className="px-4 py-2 bg-base-200 border-t border-base-300 relative">
           <div className="relative inline-block">
             <img src={imagePreview} alt="Preview" className="h-24 rounded-lg shadow-sm border border-base-300" />
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={() => setImagePreview(null)}
               className="absolute -top-2 -right-2 btn btn-xs btn-circle btn-error shadow-md"
             >
@@ -384,16 +380,16 @@ const ChatWindow = () => {
         <div className="p-4 bg-base-100/90 backdrop-blur-md border-t border-base-300 flex items-center justify-between shadow-lg">
           <span className="font-semibold text-primary">{selectedMessageIds.length} selected</span>
           <div className="flex gap-2">
-            <button 
-              className="btn btn-ghost btn-sm tooltip tooltip-top" 
+            <button
+              className="btn btn-ghost btn-sm tooltip tooltip-top"
               data-tip="Copy"
               onClick={handleCopySelected}
               disabled={selectedMessageIds.length === 0}
             >
               <Copy size={20} />
             </button>
-            <button 
-              className="btn btn-ghost btn-sm tooltip tooltip-top" 
+            <button
+              className="btn btn-ghost btn-sm tooltip tooltip-top"
               data-tip="Forward"
               onClick={() => {
                 const combinedText = messages.filter(m => selectedMessageIds.includes(m.id) && m.text).map(m => m.text).join('\n\n');
@@ -405,8 +401,8 @@ const ChatWindow = () => {
             >
               <Forward size={20} />
             </button>
-            <button 
-              className="btn btn-ghost btn-sm text-error tooltip tooltip-top" 
+            <button
+              className="btn btn-ghost btn-sm text-error tooltip tooltip-top"
               data-tip="Delete"
               onClick={() => setIsMultiDeleteOpen(true)}
               disabled={selectedMessageIds.length === 0}
@@ -414,7 +410,7 @@ const ChatWindow = () => {
               <Trash size={20} />
             </button>
             <div className="divider divider-horizontal mx-0"></div>
-            <button 
+            <button
               className="btn btn-ghost btn-sm"
               onClick={() => {
                 setIsSelectMode(false);
@@ -427,15 +423,15 @@ const ChatWindow = () => {
         </div>
       ) : (
         <form onSubmit={handleSend} className="p-4 bg-base-100/90 backdrop-blur-md border-t border-base-300 flex items-center gap-2">
-          <input 
-            type="file" 
-            accept="image/*" 
-            className="hidden" 
-            ref={fileInputRef} 
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            ref={fileInputRef}
             onChange={handleImageChange}
           />
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={() => fileInputRef.current?.click()}
             className="btn btn-ghost btn-circle text-base-content/60 hover:text-base-content"
           >
@@ -463,7 +459,7 @@ const ChatWindow = () => {
             </div>
             <ul className="menu p-2 w-full text-base">
               <li>
-                <button 
+                <button
                   className="text-error"
                   onClick={() => handleDeleteSelected(false)}
                 >
@@ -472,7 +468,7 @@ const ChatWindow = () => {
               </li>
               {canDeleteForEveryone && (
                 <li>
-                  <button 
+                  <button
                     className="text-error"
                     onClick={() => handleDeleteSelected(true)}
                   >
@@ -515,11 +511,11 @@ const ChatWindow = () => {
                   <Forward size={18} /> Forward
                 </button>
               </li>
-              
+
               <div className="divider my-1"></div>
-              
+
               <li>
-                <button 
+                <button
                   className="text-error"
                   onClick={() => {
                     deleteMessage(selectedMessage.id, false);
@@ -531,7 +527,7 @@ const ChatWindow = () => {
               </li>
               {selectedMessage.senderId === authUser.id && (
                 <li>
-                  <button 
+                  <button
                     className="text-error"
                     onClick={() => {
                       deleteMessage(selectedMessage.id, true);
@@ -542,7 +538,7 @@ const ChatWindow = () => {
                   </button>
                 </li>
               )}
-              
+
               <div className="divider my-1"></div>
               <li>
                 <button onClick={() => setSelectedMessage(null)} className="justify-center font-medium">
@@ -556,7 +552,7 @@ const ChatWindow = () => {
 
       {/* Forward Modal */}
       {isForwardOpen && selectedMessage && (
-        <ForwardMessageModal 
+        <ForwardMessageModal
           isOpen={isForwardOpen}
           onClose={() => setIsForwardOpen(false)}
           messageData={{ text: selectedMessage.text, image: selectedMessage.image }}
