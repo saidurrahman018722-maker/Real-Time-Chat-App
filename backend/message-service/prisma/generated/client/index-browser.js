@@ -123,6 +123,7 @@ exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
 exports.Prisma.UserScalarFieldEnum = {
   id: 'id',
   name: 'name',
+  email: 'email',
   profilePic: 'profilePic',
   lastSeen: 'lastSeen'
 };
@@ -139,11 +140,14 @@ exports.Prisma.MessageScalarFieldEnum = {
   senderId: 'senderId',
   receiverId: 'receiverId',
   conversationId: 'conversationId',
+  replyToId: 'replyToId',
   text: 'text',
   image: 'image',
   status: 'status',
   isDeletedForEveryone: 'isDeletedForEveryone',
   deletedBy: 'deletedBy',
+  isForwarded: 'isForwarded',
+  isPinned: 'isPinned',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };

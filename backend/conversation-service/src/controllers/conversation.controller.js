@@ -25,7 +25,8 @@ export const getConversations = async (req, res) => {
       id: c.id,
       partner: c.participants[0],
       lastMessage: null,
-      updatedAt: c.updatedAt
+      updatedAt: c.updatedAt,
+      pinnedBy: c.pinnedBy
     }));
 
     return res.status(200).json({ success: true, data: formatted });
@@ -65,6 +66,38 @@ export const deleteConversation = async (req, res) => {
     return res.status(200).json({ success: true, message: "Conversation deleted successfully" });
   } catch (error) {
     console.error("Error in deleteConversation: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const togglePinConversation = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.session.userId;
+
+    const conversation = await prisma.conversation.findUnique({
+      where: { id }
+    });
+
+    if (!conversation) return res.status(404).json({ error: "Conversation not found" });
+
+    const isPinned = conversation.pinnedBy.includes(userId);
+    let updatedPinnedBy = [...conversation.pinnedBy];
+
+    if (isPinned) {
+      updatedPinnedBy = updatedPinnedBy.filter(uId => uId !== userId);
+    } else {
+      updatedPinnedBy.push(userId);
+    }
+
+    const updated = await prisma.conversation.update({
+      where: { id },
+      data: { pinnedBy: updatedPinnedBy }
+    });
+
+    return res.status(200).json({ success: true, data: { pinnedBy: updated.pinnedBy } });
+  } catch (error) {
+    console.error("Error in togglePinConversation: ", error.message);
     return res.status(500).json({ error: "Internal server error" });
   }
 };

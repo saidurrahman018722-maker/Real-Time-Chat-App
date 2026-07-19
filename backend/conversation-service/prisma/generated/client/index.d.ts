@@ -2123,6 +2123,7 @@ export namespace Prisma {
     updatedAt: number
     createdAt: number
     deletedBy: number
+    pinnedBy: number
     _all: number
   }
 
@@ -2147,6 +2148,7 @@ export namespace Prisma {
     updatedAt?: true
     createdAt?: true
     deletedBy?: true
+    pinnedBy?: true
     _all?: true
   }
 
@@ -2228,6 +2230,7 @@ export namespace Prisma {
     updatedAt: Date
     createdAt: Date
     deletedBy: string[]
+    pinnedBy: string[]
     _count: ConversationCountAggregateOutputType | null
     _min: ConversationMinAggregateOutputType | null
     _max: ConversationMaxAggregateOutputType | null
@@ -2253,6 +2256,7 @@ export namespace Prisma {
     updatedAt?: boolean
     createdAt?: boolean
     deletedBy?: boolean
+    pinnedBy?: boolean
     participants?: boolean | Conversation$participantsArgs<ExtArgs>
     _count?: boolean | ConversationCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["conversation"]>
@@ -2263,6 +2267,7 @@ export namespace Prisma {
     updatedAt?: boolean
     createdAt?: boolean
     deletedBy?: boolean
+    pinnedBy?: boolean
   }, ExtArgs["result"]["conversation"]>
 
   export type ConversationSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -2271,6 +2276,7 @@ export namespace Prisma {
     updatedAt?: boolean
     createdAt?: boolean
     deletedBy?: boolean
+    pinnedBy?: boolean
   }, ExtArgs["result"]["conversation"]>
 
   export type ConversationSelectScalar = {
@@ -2279,9 +2285,10 @@ export namespace Prisma {
     updatedAt?: boolean
     createdAt?: boolean
     deletedBy?: boolean
+    pinnedBy?: boolean
   }
 
-  export type ConversationOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "lastMessageId" | "updatedAt" | "createdAt" | "deletedBy", ExtArgs["result"]["conversation"]>
+  export type ConversationOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "lastMessageId" | "updatedAt" | "createdAt" | "deletedBy" | "pinnedBy", ExtArgs["result"]["conversation"]>
   export type ConversationInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     participants?: boolean | Conversation$participantsArgs<ExtArgs>
     _count?: boolean | ConversationCountOutputTypeDefaultArgs<ExtArgs>
@@ -2300,6 +2307,7 @@ export namespace Prisma {
       updatedAt: Date
       createdAt: Date
       deletedBy: string[]
+      pinnedBy: string[]
     }, ExtArgs["result"]["conversation"]>
     composites: {}
   }
@@ -2729,6 +2737,7 @@ export namespace Prisma {
     readonly updatedAt: FieldRef<"Conversation", 'DateTime'>
     readonly createdAt: FieldRef<"Conversation", 'DateTime'>
     readonly deletedBy: FieldRef<"Conversation", 'String[]'>
+    readonly pinnedBy: FieldRef<"Conversation", 'String[]'>
   }
     
 
@@ -3194,7 +3203,8 @@ export namespace Prisma {
     lastMessageId: 'lastMessageId',
     updatedAt: 'updatedAt',
     createdAt: 'createdAt',
-    deletedBy: 'deletedBy'
+    deletedBy: 'deletedBy',
+    pinnedBy: 'pinnedBy'
   };
 
   export type ConversationScalarFieldEnum = (typeof ConversationScalarFieldEnum)[keyof typeof ConversationScalarFieldEnum]
@@ -3338,6 +3348,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"Conversation"> | Date | string
     createdAt?: DateTimeFilter<"Conversation"> | Date | string
     deletedBy?: StringNullableListFilter<"Conversation">
+    pinnedBy?: StringNullableListFilter<"Conversation">
     participants?: UserListRelationFilter
   }
 
@@ -3347,6 +3358,7 @@ export namespace Prisma {
     updatedAt?: SortOrder
     createdAt?: SortOrder
     deletedBy?: SortOrder
+    pinnedBy?: SortOrder
     participants?: UserOrderByRelationAggregateInput
   }
 
@@ -3359,6 +3371,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"Conversation"> | Date | string
     createdAt?: DateTimeFilter<"Conversation"> | Date | string
     deletedBy?: StringNullableListFilter<"Conversation">
+    pinnedBy?: StringNullableListFilter<"Conversation">
     participants?: UserListRelationFilter
   }, "id">
 
@@ -3368,6 +3381,7 @@ export namespace Prisma {
     updatedAt?: SortOrder
     createdAt?: SortOrder
     deletedBy?: SortOrder
+    pinnedBy?: SortOrder
     _count?: ConversationCountOrderByAggregateInput
     _max?: ConversationMaxOrderByAggregateInput
     _min?: ConversationMinOrderByAggregateInput
@@ -3382,6 +3396,7 @@ export namespace Prisma {
     updatedAt?: DateTimeWithAggregatesFilter<"Conversation"> | Date | string
     createdAt?: DateTimeWithAggregatesFilter<"Conversation"> | Date | string
     deletedBy?: StringNullableListFilter<"Conversation">
+    pinnedBy?: StringNullableListFilter<"Conversation">
   }
 
   export type UserCreateInput = {
@@ -3450,6 +3465,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     createdAt?: Date | string
     deletedBy?: ConversationCreatedeletedByInput | string[]
+    pinnedBy?: ConversationCreatepinnedByInput | string[]
     participants?: UserCreateNestedManyWithoutConversationsInput
   }
 
@@ -3459,6 +3475,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     createdAt?: Date | string
     deletedBy?: ConversationCreatedeletedByInput | string[]
+    pinnedBy?: ConversationCreatepinnedByInput | string[]
     participants?: UserUncheckedCreateNestedManyWithoutConversationsInput
   }
 
@@ -3468,6 +3485,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedBy?: ConversationUpdatedeletedByInput | string[]
+    pinnedBy?: ConversationUpdatepinnedByInput | string[]
     participants?: UserUpdateManyWithoutConversationsNestedInput
   }
 
@@ -3477,6 +3495,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedBy?: ConversationUpdatedeletedByInput | string[]
+    pinnedBy?: ConversationUpdatepinnedByInput | string[]
     participants?: UserUncheckedUpdateManyWithoutConversationsNestedInput
   }
 
@@ -3486,6 +3505,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     createdAt?: Date | string
     deletedBy?: ConversationCreatedeletedByInput | string[]
+    pinnedBy?: ConversationCreatepinnedByInput | string[]
   }
 
   export type ConversationUpdateManyMutationInput = {
@@ -3494,6 +3514,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedBy?: ConversationUpdatedeletedByInput | string[]
+    pinnedBy?: ConversationUpdatepinnedByInput | string[]
   }
 
   export type ConversationUncheckedUpdateManyInput = {
@@ -3502,6 +3523,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedBy?: ConversationUpdatedeletedByInput | string[]
+    pinnedBy?: ConversationUpdatepinnedByInput | string[]
   }
 
   export type StringFilter<$PrismaModel = never> = {
@@ -3669,6 +3691,7 @@ export namespace Prisma {
     updatedAt?: SortOrder
     createdAt?: SortOrder
     deletedBy?: SortOrder
+    pinnedBy?: SortOrder
   }
 
   export type ConversationMaxOrderByAggregateInput = {
@@ -3753,6 +3776,10 @@ export namespace Prisma {
     set: string[]
   }
 
+  export type ConversationCreatepinnedByInput = {
+    set: string[]
+  }
+
   export type UserCreateNestedManyWithoutConversationsInput = {
     create?: XOR<UserCreateWithoutConversationsInput, UserUncheckedCreateWithoutConversationsInput> | UserCreateWithoutConversationsInput[] | UserUncheckedCreateWithoutConversationsInput[]
     connectOrCreate?: UserCreateOrConnectWithoutConversationsInput | UserCreateOrConnectWithoutConversationsInput[]
@@ -3770,6 +3797,11 @@ export namespace Prisma {
   }
 
   export type ConversationUpdatedeletedByInput = {
+    set?: string[]
+    push?: string | string[]
+  }
+
+  export type ConversationUpdatepinnedByInput = {
     set?: string[]
     push?: string | string[]
   }
@@ -3940,6 +3972,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     createdAt?: Date | string
     deletedBy?: ConversationCreatedeletedByInput | string[]
+    pinnedBy?: ConversationCreatepinnedByInput | string[]
   }
 
   export type ConversationUncheckedCreateWithoutParticipantsInput = {
@@ -3948,6 +3981,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     createdAt?: Date | string
     deletedBy?: ConversationCreatedeletedByInput | string[]
+    pinnedBy?: ConversationCreatepinnedByInput | string[]
   }
 
   export type ConversationCreateOrConnectWithoutParticipantsInput = {
@@ -3980,6 +4014,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"Conversation"> | Date | string
     createdAt?: DateTimeFilter<"Conversation"> | Date | string
     deletedBy?: StringNullableListFilter<"Conversation">
+    pinnedBy?: StringNullableListFilter<"Conversation">
   }
 
   export type UserCreateWithoutConversationsInput = {
@@ -4036,6 +4071,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedBy?: ConversationUpdatedeletedByInput | string[]
+    pinnedBy?: ConversationUpdatepinnedByInput | string[]
   }
 
   export type ConversationUncheckedUpdateWithoutParticipantsInput = {
@@ -4044,6 +4080,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedBy?: ConversationUpdatedeletedByInput | string[]
+    pinnedBy?: ConversationUpdatepinnedByInput | string[]
   }
 
   export type ConversationUncheckedUpdateManyWithoutParticipantsInput = {
@@ -4052,6 +4089,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedBy?: ConversationUpdatedeletedByInput | string[]
+    pinnedBy?: ConversationUpdatepinnedByInput | string[]
   }
 
   export type UserUpdateWithoutConversationsInput = {

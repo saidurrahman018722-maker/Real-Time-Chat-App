@@ -42,12 +42,18 @@ model Message {
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
+  replyToId      String?
+  replyTo        Message?  @relation("MessageReplies", fields: [replyToId], references: [id])
+  replies        Message[] @relation("MessageReplies")
+
   text  String?
   image String?
   
   status               MessageStatus @default(SENT)
   isDeletedForEveryone Boolean  @default(false)
   deletedBy            String[] @default([])
+  isForwarded          Boolean  @default(false)
+  isPinned             Boolean  @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
