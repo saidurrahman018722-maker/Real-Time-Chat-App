@@ -46,23 +46,28 @@ const BackgroundSelector = ({ conversationId }) => {
   };
 
   return (
-    <div className="dropdown dropdown-end">
-      <div tabIndex={0} role="button" className="btn btn-ghost btn-circle btn-sm">
-        <ImageIcon size={20} />
-      </div>
-      <ul tabIndex={0} className="dropdown-content z-[1] menu p-4 shadow-2xl bg-base-100 rounded-box w-72">
-        <li className="menu-title mb-2">Chat Wallpaper</li>
+    <dialog id="theme_modal" className="modal">
+      <div className="modal-box">
+        <h3 className="font-bold text-lg mb-4">Chat Wallpaper</h3>
         <div className="grid grid-cols-3 gap-2">
           {BACKGROUNDS.map((bg, idx) => (
             <div 
               key={idx}
-              className={`h-16 rounded-lg cursor-pointer border-2 bg-cover bg-center ${bgClass === bg ? 'border-primary' : 'border-transparent'} ${bg}`}
+              className={`h-24 rounded-lg cursor-pointer border-2 bg-cover bg-center ${bgClass === bg ? 'border-primary' : 'border-transparent'} ${bg}`}
               onClick={() => selectBg(bg)}
             ></div>
           ))}
         </div>
-      </ul>
-    </div>
+        <div className="modal-action">
+          <form method="dialog">
+            <button className="btn">Close</button>
+          </form>
+        </div>
+      </div>
+      <form method="dialog" className="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
   );
 };
 

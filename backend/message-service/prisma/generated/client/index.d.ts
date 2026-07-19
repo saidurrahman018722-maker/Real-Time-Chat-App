@@ -1149,18 +1149,21 @@ export namespace Prisma {
   export type UserMinAggregateOutputType = {
     id: string | null
     name: string | null
+    email: string | null
     profilePic: string | null
   }
 
   export type UserMaxAggregateOutputType = {
     id: string | null
     name: string | null
+    email: string | null
     profilePic: string | null
   }
 
   export type UserCountAggregateOutputType = {
     id: number
     name: number
+    email: number
     profilePic: number
     _all: number
   }
@@ -1169,18 +1172,21 @@ export namespace Prisma {
   export type UserMinAggregateInputType = {
     id?: true
     name?: true
+    email?: true
     profilePic?: true
   }
 
   export type UserMaxAggregateInputType = {
     id?: true
     name?: true
+    email?: true
     profilePic?: true
   }
 
   export type UserCountAggregateInputType = {
     id?: true
     name?: true
+    email?: true
     profilePic?: true
     _all?: true
   }
@@ -1260,6 +1266,7 @@ export namespace Prisma {
   export type UserGroupByOutputType = {
     id: string
     name: string
+    email: string | null
     profilePic: string | null
     _count: UserCountAggregateOutputType | null
     _min: UserMinAggregateOutputType | null
@@ -1283,6 +1290,7 @@ export namespace Prisma {
   export type UserSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     name?: boolean
+    email?: boolean
     profilePic?: boolean
     sentMessages?: boolean | User$sentMessagesArgs<ExtArgs>
     receivedMessages?: boolean | User$receivedMessagesArgs<ExtArgs>
@@ -1293,22 +1301,25 @@ export namespace Prisma {
   export type UserSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     name?: boolean
+    email?: boolean
     profilePic?: boolean
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     name?: boolean
+    email?: boolean
     profilePic?: boolean
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectScalar = {
     id?: boolean
     name?: boolean
+    email?: boolean
     profilePic?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "profilePic", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "email" | "profilePic", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     sentMessages?: boolean | User$sentMessagesArgs<ExtArgs>
     receivedMessages?: boolean | User$receivedMessagesArgs<ExtArgs>
@@ -1328,6 +1339,7 @@ export namespace Prisma {
     scalars: $Extensions.GetPayloadResult<{
       id: string
       name: string
+      email: string | null
       profilePic: string | null
     }, ExtArgs["result"]["user"]>
     composites: {}
@@ -1757,6 +1769,7 @@ export namespace Prisma {
   interface UserFieldRefs {
     readonly id: FieldRef<"User", 'String'>
     readonly name: FieldRef<"User", 'String'>
+    readonly email: FieldRef<"User", 'String'>
     readonly profilePic: FieldRef<"User", 'String'>
   }
     
@@ -3344,6 +3357,7 @@ export namespace Prisma {
     conversationId: string | null
     text: string | null
     image: string | null
+    isRead: boolean | null
     isDeletedForEveryone: boolean | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -3356,6 +3370,7 @@ export namespace Prisma {
     conversationId: string | null
     text: string | null
     image: string | null
+    isRead: boolean | null
     isDeletedForEveryone: boolean | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -3368,6 +3383,7 @@ export namespace Prisma {
     conversationId: number
     text: number
     image: number
+    isRead: number
     isDeletedForEveryone: number
     deletedBy: number
     createdAt: number
@@ -3383,6 +3399,7 @@ export namespace Prisma {
     conversationId?: true
     text?: true
     image?: true
+    isRead?: true
     isDeletedForEveryone?: true
     createdAt?: true
     updatedAt?: true
@@ -3395,6 +3412,7 @@ export namespace Prisma {
     conversationId?: true
     text?: true
     image?: true
+    isRead?: true
     isDeletedForEveryone?: true
     createdAt?: true
     updatedAt?: true
@@ -3407,6 +3425,7 @@ export namespace Prisma {
     conversationId?: true
     text?: true
     image?: true
+    isRead?: true
     isDeletedForEveryone?: true
     deletedBy?: true
     createdAt?: true
@@ -3493,6 +3512,7 @@ export namespace Prisma {
     conversationId: string
     text: string | null
     image: string | null
+    isRead: boolean
     isDeletedForEveryone: boolean
     deletedBy: string[]
     createdAt: Date
@@ -3523,6 +3543,7 @@ export namespace Prisma {
     conversationId?: boolean
     text?: boolean
     image?: boolean
+    isRead?: boolean
     isDeletedForEveryone?: boolean
     deletedBy?: boolean
     createdAt?: boolean
@@ -3539,6 +3560,7 @@ export namespace Prisma {
     conversationId?: boolean
     text?: boolean
     image?: boolean
+    isRead?: boolean
     isDeletedForEveryone?: boolean
     deletedBy?: boolean
     createdAt?: boolean
@@ -3555,6 +3577,7 @@ export namespace Prisma {
     conversationId?: boolean
     text?: boolean
     image?: boolean
+    isRead?: boolean
     isDeletedForEveryone?: boolean
     deletedBy?: boolean
     createdAt?: boolean
@@ -3571,13 +3594,14 @@ export namespace Prisma {
     conversationId?: boolean
     text?: boolean
     image?: boolean
+    isRead?: boolean
     isDeletedForEveryone?: boolean
     deletedBy?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type MessageOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "senderId" | "receiverId" | "conversationId" | "text" | "image" | "isDeletedForEveryone" | "deletedBy" | "createdAt" | "updatedAt", ExtArgs["result"]["message"]>
+  export type MessageOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "senderId" | "receiverId" | "conversationId" | "text" | "image" | "isRead" | "isDeletedForEveryone" | "deletedBy" | "createdAt" | "updatedAt", ExtArgs["result"]["message"]>
   export type MessageInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     conversation?: boolean | ConversationDefaultArgs<ExtArgs>
     sender?: boolean | UserDefaultArgs<ExtArgs>
@@ -3608,6 +3632,7 @@ export namespace Prisma {
       conversationId: string
       text: string | null
       image: string | null
+      isRead: boolean
       isDeletedForEveryone: boolean
       deletedBy: string[]
       createdAt: Date
@@ -4044,6 +4069,7 @@ export namespace Prisma {
     readonly conversationId: FieldRef<"Message", 'String'>
     readonly text: FieldRef<"Message", 'String'>
     readonly image: FieldRef<"Message", 'String'>
+    readonly isRead: FieldRef<"Message", 'Boolean'>
     readonly isDeletedForEveryone: FieldRef<"Message", 'Boolean'>
     readonly deletedBy: FieldRef<"Message", 'String[]'>
     readonly createdAt: FieldRef<"Message", 'DateTime'>
@@ -4484,6 +4510,7 @@ export namespace Prisma {
   export const UserScalarFieldEnum: {
     id: 'id',
     name: 'name',
+    email: 'email',
     profilePic: 'profilePic'
   };
 
@@ -4507,6 +4534,7 @@ export namespace Prisma {
     conversationId: 'conversationId',
     text: 'text',
     image: 'image',
+    isRead: 'isRead',
     isDeletedForEveryone: 'isDeletedForEveryone',
     deletedBy: 'deletedBy',
     createdAt: 'createdAt',
@@ -4603,6 +4631,7 @@ export namespace Prisma {
     NOT?: UserWhereInput | UserWhereInput[]
     id?: StringFilter<"User"> | string
     name?: StringFilter<"User"> | string
+    email?: StringNullableFilter<"User"> | string | null
     profilePic?: StringNullableFilter<"User"> | string | null
     sentMessages?: MessageListRelationFilter
     receivedMessages?: MessageListRelationFilter
@@ -4612,6 +4641,7 @@ export namespace Prisma {
   export type UserOrderByWithRelationInput = {
     id?: SortOrder
     name?: SortOrder
+    email?: SortOrderInput | SortOrder
     profilePic?: SortOrderInput | SortOrder
     sentMessages?: MessageOrderByRelationAggregateInput
     receivedMessages?: MessageOrderByRelationAggregateInput
@@ -4624,6 +4654,7 @@ export namespace Prisma {
     OR?: UserWhereInput[]
     NOT?: UserWhereInput | UserWhereInput[]
     name?: StringFilter<"User"> | string
+    email?: StringNullableFilter<"User"> | string | null
     profilePic?: StringNullableFilter<"User"> | string | null
     sentMessages?: MessageListRelationFilter
     receivedMessages?: MessageListRelationFilter
@@ -4633,6 +4664,7 @@ export namespace Prisma {
   export type UserOrderByWithAggregationInput = {
     id?: SortOrder
     name?: SortOrder
+    email?: SortOrderInput | SortOrder
     profilePic?: SortOrderInput | SortOrder
     _count?: UserCountOrderByAggregateInput
     _max?: UserMaxOrderByAggregateInput
@@ -4645,6 +4677,7 @@ export namespace Prisma {
     NOT?: UserScalarWhereWithAggregatesInput | UserScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"User"> | string
     name?: StringWithAggregatesFilter<"User"> | string
+    email?: StringNullableWithAggregatesFilter<"User"> | string | null
     profilePic?: StringNullableWithAggregatesFilter<"User"> | string | null
   }
 
@@ -4711,6 +4744,7 @@ export namespace Prisma {
     conversationId?: StringFilter<"Message"> | string
     text?: StringNullableFilter<"Message"> | string | null
     image?: StringNullableFilter<"Message"> | string | null
+    isRead?: BoolFilter<"Message"> | boolean
     isDeletedForEveryone?: BoolFilter<"Message"> | boolean
     deletedBy?: StringNullableListFilter<"Message">
     createdAt?: DateTimeFilter<"Message"> | Date | string
@@ -4727,6 +4761,7 @@ export namespace Prisma {
     conversationId?: SortOrder
     text?: SortOrderInput | SortOrder
     image?: SortOrderInput | SortOrder
+    isRead?: SortOrder
     isDeletedForEveryone?: SortOrder
     deletedBy?: SortOrder
     createdAt?: SortOrder
@@ -4746,6 +4781,7 @@ export namespace Prisma {
     conversationId?: StringFilter<"Message"> | string
     text?: StringNullableFilter<"Message"> | string | null
     image?: StringNullableFilter<"Message"> | string | null
+    isRead?: BoolFilter<"Message"> | boolean
     isDeletedForEveryone?: BoolFilter<"Message"> | boolean
     deletedBy?: StringNullableListFilter<"Message">
     createdAt?: DateTimeFilter<"Message"> | Date | string
@@ -4762,6 +4798,7 @@ export namespace Prisma {
     conversationId?: SortOrder
     text?: SortOrderInput | SortOrder
     image?: SortOrderInput | SortOrder
+    isRead?: SortOrder
     isDeletedForEveryone?: SortOrder
     deletedBy?: SortOrder
     createdAt?: SortOrder
@@ -4781,6 +4818,7 @@ export namespace Prisma {
     conversationId?: StringWithAggregatesFilter<"Message"> | string
     text?: StringNullableWithAggregatesFilter<"Message"> | string | null
     image?: StringNullableWithAggregatesFilter<"Message"> | string | null
+    isRead?: BoolWithAggregatesFilter<"Message"> | boolean
     isDeletedForEveryone?: BoolWithAggregatesFilter<"Message"> | boolean
     deletedBy?: StringNullableListFilter<"Message">
     createdAt?: DateTimeWithAggregatesFilter<"Message"> | Date | string
@@ -4790,6 +4828,7 @@ export namespace Prisma {
   export type UserCreateInput = {
     id: string
     name: string
+    email?: string | null
     profilePic?: string | null
     sentMessages?: MessageCreateNestedManyWithoutSenderInput
     receivedMessages?: MessageCreateNestedManyWithoutReceiverInput
@@ -4799,6 +4838,7 @@ export namespace Prisma {
   export type UserUncheckedCreateInput = {
     id: string
     name: string
+    email?: string | null
     profilePic?: string | null
     sentMessages?: MessageUncheckedCreateNestedManyWithoutSenderInput
     receivedMessages?: MessageUncheckedCreateNestedManyWithoutReceiverInput
@@ -4808,6 +4848,7 @@ export namespace Prisma {
   export type UserUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     sentMessages?: MessageUpdateManyWithoutSenderNestedInput
     receivedMessages?: MessageUpdateManyWithoutReceiverNestedInput
@@ -4817,6 +4858,7 @@ export namespace Prisma {
   export type UserUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     sentMessages?: MessageUncheckedUpdateManyWithoutSenderNestedInput
     receivedMessages?: MessageUncheckedUpdateManyWithoutReceiverNestedInput
@@ -4826,18 +4868,21 @@ export namespace Prisma {
   export type UserCreateManyInput = {
     id: string
     name: string
+    email?: string | null
     profilePic?: string | null
   }
 
   export type UserUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type UserUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
@@ -4902,6 +4947,7 @@ export namespace Prisma {
     id?: string
     text?: string | null
     image?: string | null
+    isRead?: boolean
     isDeletedForEveryone?: boolean
     deletedBy?: MessageCreatedeletedByInput | string[]
     createdAt?: Date | string
@@ -4918,6 +4964,7 @@ export namespace Prisma {
     conversationId: string
     text?: string | null
     image?: string | null
+    isRead?: boolean
     isDeletedForEveryone?: boolean
     deletedBy?: MessageCreatedeletedByInput | string[]
     createdAt?: Date | string
@@ -4928,6 +4975,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     text?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    isRead?: BoolFieldUpdateOperationsInput | boolean
     isDeletedForEveryone?: BoolFieldUpdateOperationsInput | boolean
     deletedBy?: MessageUpdatedeletedByInput | string[]
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -4944,6 +4992,7 @@ export namespace Prisma {
     conversationId?: StringFieldUpdateOperationsInput | string
     text?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    isRead?: BoolFieldUpdateOperationsInput | boolean
     isDeletedForEveryone?: BoolFieldUpdateOperationsInput | boolean
     deletedBy?: MessageUpdatedeletedByInput | string[]
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -4957,6 +5006,7 @@ export namespace Prisma {
     conversationId: string
     text?: string | null
     image?: string | null
+    isRead?: boolean
     isDeletedForEveryone?: boolean
     deletedBy?: MessageCreatedeletedByInput | string[]
     createdAt?: Date | string
@@ -4967,6 +5017,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     text?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    isRead?: BoolFieldUpdateOperationsInput | boolean
     isDeletedForEveryone?: BoolFieldUpdateOperationsInput | boolean
     deletedBy?: MessageUpdatedeletedByInput | string[]
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -4980,6 +5031,7 @@ export namespace Prisma {
     conversationId?: StringFieldUpdateOperationsInput | string
     text?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    isRead?: BoolFieldUpdateOperationsInput | boolean
     isDeletedForEveryone?: BoolFieldUpdateOperationsInput | boolean
     deletedBy?: MessageUpdatedeletedByInput | string[]
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -5044,18 +5096,21 @@ export namespace Prisma {
   export type UserCountOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
+    email?: SortOrder
     profilePic?: SortOrder
   }
 
   export type UserMaxOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
+    email?: SortOrder
     profilePic?: SortOrder
   }
 
   export type UserMinOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
+    email?: SortOrder
     profilePic?: SortOrder
   }
 
@@ -5179,6 +5234,7 @@ export namespace Prisma {
     conversationId?: SortOrder
     text?: SortOrder
     image?: SortOrder
+    isRead?: SortOrder
     isDeletedForEveryone?: SortOrder
     deletedBy?: SortOrder
     createdAt?: SortOrder
@@ -5192,6 +5248,7 @@ export namespace Prisma {
     conversationId?: SortOrder
     text?: SortOrder
     image?: SortOrder
+    isRead?: SortOrder
     isDeletedForEveryone?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -5204,6 +5261,7 @@ export namespace Prisma {
     conversationId?: SortOrder
     text?: SortOrder
     image?: SortOrder
+    isRead?: SortOrder
     isDeletedForEveryone?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -5621,6 +5679,7 @@ export namespace Prisma {
     id?: string
     text?: string | null
     image?: string | null
+    isRead?: boolean
     isDeletedForEveryone?: boolean
     deletedBy?: MessageCreatedeletedByInput | string[]
     createdAt?: Date | string
@@ -5635,6 +5694,7 @@ export namespace Prisma {
     conversationId: string
     text?: string | null
     image?: string | null
+    isRead?: boolean
     isDeletedForEveryone?: boolean
     deletedBy?: MessageCreatedeletedByInput | string[]
     createdAt?: Date | string
@@ -5655,6 +5715,7 @@ export namespace Prisma {
     id?: string
     text?: string | null
     image?: string | null
+    isRead?: boolean
     isDeletedForEveryone?: boolean
     deletedBy?: MessageCreatedeletedByInput | string[]
     createdAt?: Date | string
@@ -5669,6 +5730,7 @@ export namespace Prisma {
     conversationId: string
     text?: string | null
     image?: string | null
+    isRead?: boolean
     isDeletedForEveryone?: boolean
     deletedBy?: MessageCreatedeletedByInput | string[]
     createdAt?: Date | string
@@ -5732,6 +5794,7 @@ export namespace Prisma {
     conversationId?: StringFilter<"Message"> | string
     text?: StringNullableFilter<"Message"> | string | null
     image?: StringNullableFilter<"Message"> | string | null
+    isRead?: BoolFilter<"Message"> | boolean
     isDeletedForEveryone?: BoolFilter<"Message"> | boolean
     deletedBy?: StringNullableListFilter<"Message">
     createdAt?: DateTimeFilter<"Message"> | Date | string
@@ -5783,6 +5846,7 @@ export namespace Prisma {
   export type UserCreateWithoutConversationsInput = {
     id: string
     name: string
+    email?: string | null
     profilePic?: string | null
     sentMessages?: MessageCreateNestedManyWithoutSenderInput
     receivedMessages?: MessageCreateNestedManyWithoutReceiverInput
@@ -5791,6 +5855,7 @@ export namespace Prisma {
   export type UserUncheckedCreateWithoutConversationsInput = {
     id: string
     name: string
+    email?: string | null
     profilePic?: string | null
     sentMessages?: MessageUncheckedCreateNestedManyWithoutSenderInput
     receivedMessages?: MessageUncheckedCreateNestedManyWithoutReceiverInput
@@ -5805,6 +5870,7 @@ export namespace Prisma {
     id?: string
     text?: string | null
     image?: string | null
+    isRead?: boolean
     isDeletedForEveryone?: boolean
     deletedBy?: MessageCreatedeletedByInput | string[]
     createdAt?: Date | string
@@ -5819,6 +5885,7 @@ export namespace Prisma {
     receiverId: string
     text?: string | null
     image?: string | null
+    isRead?: boolean
     isDeletedForEveryone?: boolean
     deletedBy?: MessageCreatedeletedByInput | string[]
     createdAt?: Date | string
@@ -5857,6 +5924,7 @@ export namespace Prisma {
     NOT?: UserScalarWhereInput | UserScalarWhereInput[]
     id?: StringFilter<"User"> | string
     name?: StringFilter<"User"> | string
+    email?: StringNullableFilter<"User"> | string | null
     profilePic?: StringNullableFilter<"User"> | string | null
   }
 
@@ -5900,6 +5968,7 @@ export namespace Prisma {
   export type UserCreateWithoutSentMessagesInput = {
     id: string
     name: string
+    email?: string | null
     profilePic?: string | null
     receivedMessages?: MessageCreateNestedManyWithoutReceiverInput
     conversations?: ConversationCreateNestedManyWithoutParticipantsInput
@@ -5908,6 +5977,7 @@ export namespace Prisma {
   export type UserUncheckedCreateWithoutSentMessagesInput = {
     id: string
     name: string
+    email?: string | null
     profilePic?: string | null
     receivedMessages?: MessageUncheckedCreateNestedManyWithoutReceiverInput
     conversations?: ConversationUncheckedCreateNestedManyWithoutParticipantsInput
@@ -5921,6 +5991,7 @@ export namespace Prisma {
   export type UserCreateWithoutReceivedMessagesInput = {
     id: string
     name: string
+    email?: string | null
     profilePic?: string | null
     sentMessages?: MessageCreateNestedManyWithoutSenderInput
     conversations?: ConversationCreateNestedManyWithoutParticipantsInput
@@ -5929,6 +6000,7 @@ export namespace Prisma {
   export type UserUncheckedCreateWithoutReceivedMessagesInput = {
     id: string
     name: string
+    email?: string | null
     profilePic?: string | null
     sentMessages?: MessageUncheckedCreateNestedManyWithoutSenderInput
     conversations?: ConversationUncheckedCreateNestedManyWithoutParticipantsInput
@@ -5980,6 +6052,7 @@ export namespace Prisma {
   export type UserUpdateWithoutSentMessagesInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     receivedMessages?: MessageUpdateManyWithoutReceiverNestedInput
     conversations?: ConversationUpdateManyWithoutParticipantsNestedInput
@@ -5988,6 +6061,7 @@ export namespace Prisma {
   export type UserUncheckedUpdateWithoutSentMessagesInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     receivedMessages?: MessageUncheckedUpdateManyWithoutReceiverNestedInput
     conversations?: ConversationUncheckedUpdateManyWithoutParticipantsNestedInput
@@ -6007,6 +6081,7 @@ export namespace Prisma {
   export type UserUpdateWithoutReceivedMessagesInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     sentMessages?: MessageUpdateManyWithoutSenderNestedInput
     conversations?: ConversationUpdateManyWithoutParticipantsNestedInput
@@ -6015,6 +6090,7 @@ export namespace Prisma {
   export type UserUncheckedUpdateWithoutReceivedMessagesInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     sentMessages?: MessageUncheckedUpdateManyWithoutSenderNestedInput
     conversations?: ConversationUncheckedUpdateManyWithoutParticipantsNestedInput
@@ -6026,6 +6102,7 @@ export namespace Prisma {
     conversationId: string
     text?: string | null
     image?: string | null
+    isRead?: boolean
     isDeletedForEveryone?: boolean
     deletedBy?: MessageCreatedeletedByInput | string[]
     createdAt?: Date | string
@@ -6038,6 +6115,7 @@ export namespace Prisma {
     conversationId: string
     text?: string | null
     image?: string | null
+    isRead?: boolean
     isDeletedForEveryone?: boolean
     deletedBy?: MessageCreatedeletedByInput | string[]
     createdAt?: Date | string
@@ -6048,6 +6126,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     text?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    isRead?: BoolFieldUpdateOperationsInput | boolean
     isDeletedForEveryone?: BoolFieldUpdateOperationsInput | boolean
     deletedBy?: MessageUpdatedeletedByInput | string[]
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6062,6 +6141,7 @@ export namespace Prisma {
     conversationId?: StringFieldUpdateOperationsInput | string
     text?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    isRead?: BoolFieldUpdateOperationsInput | boolean
     isDeletedForEveryone?: BoolFieldUpdateOperationsInput | boolean
     deletedBy?: MessageUpdatedeletedByInput | string[]
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6074,6 +6154,7 @@ export namespace Prisma {
     conversationId?: StringFieldUpdateOperationsInput | string
     text?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    isRead?: BoolFieldUpdateOperationsInput | boolean
     isDeletedForEveryone?: BoolFieldUpdateOperationsInput | boolean
     deletedBy?: MessageUpdatedeletedByInput | string[]
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6084,6 +6165,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     text?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    isRead?: BoolFieldUpdateOperationsInput | boolean
     isDeletedForEveryone?: BoolFieldUpdateOperationsInput | boolean
     deletedBy?: MessageUpdatedeletedByInput | string[]
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6098,6 +6180,7 @@ export namespace Prisma {
     conversationId?: StringFieldUpdateOperationsInput | string
     text?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    isRead?: BoolFieldUpdateOperationsInput | boolean
     isDeletedForEveryone?: BoolFieldUpdateOperationsInput | boolean
     deletedBy?: MessageUpdatedeletedByInput | string[]
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6110,6 +6193,7 @@ export namespace Prisma {
     conversationId?: StringFieldUpdateOperationsInput | string
     text?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    isRead?: BoolFieldUpdateOperationsInput | boolean
     isDeletedForEveryone?: BoolFieldUpdateOperationsInput | boolean
     deletedBy?: MessageUpdatedeletedByInput | string[]
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6145,6 +6229,7 @@ export namespace Prisma {
     receiverId: string
     text?: string | null
     image?: string | null
+    isRead?: boolean
     isDeletedForEveryone?: boolean
     deletedBy?: MessageCreatedeletedByInput | string[]
     createdAt?: Date | string
@@ -6154,6 +6239,7 @@ export namespace Prisma {
   export type UserUpdateWithoutConversationsInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     sentMessages?: MessageUpdateManyWithoutSenderNestedInput
     receivedMessages?: MessageUpdateManyWithoutReceiverNestedInput
@@ -6162,6 +6248,7 @@ export namespace Prisma {
   export type UserUncheckedUpdateWithoutConversationsInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
     sentMessages?: MessageUncheckedUpdateManyWithoutSenderNestedInput
     receivedMessages?: MessageUncheckedUpdateManyWithoutReceiverNestedInput
@@ -6170,6 +6257,7 @@ export namespace Prisma {
   export type UserUncheckedUpdateManyWithoutConversationsInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
     profilePic?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
@@ -6177,6 +6265,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     text?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    isRead?: BoolFieldUpdateOperationsInput | boolean
     isDeletedForEveryone?: BoolFieldUpdateOperationsInput | boolean
     deletedBy?: MessageUpdatedeletedByInput | string[]
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6191,6 +6280,7 @@ export namespace Prisma {
     receiverId?: StringFieldUpdateOperationsInput | string
     text?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    isRead?: BoolFieldUpdateOperationsInput | boolean
     isDeletedForEveryone?: BoolFieldUpdateOperationsInput | boolean
     deletedBy?: MessageUpdatedeletedByInput | string[]
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6203,6 +6293,7 @@ export namespace Prisma {
     receiverId?: StringFieldUpdateOperationsInput | string
     text?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    isRead?: BoolFieldUpdateOperationsInput | boolean
     isDeletedForEveryone?: BoolFieldUpdateOperationsInput | boolean
     deletedBy?: MessageUpdatedeletedByInput | string[]
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
 import { useThemeStore } from '../store/useThemeStore';
+import { useChatStore } from '../store/useChatStore';
 import { LogOut, User, Image as ImageIcon, Send, ArrowLeft, Settings, Palette, Image as MediaIcon, CheckCircle2, AlertCircle, Menu } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -15,6 +16,7 @@ const THEMES = [
 const SettingsPage = () => {
   const { authUser, logout, updateProfile } = useAuthStore();
   const { theme, setTheme } = useThemeStore();
+  const { sharedMediaGlobal, getSharedMediaGlobal, isMediaLoading } = useChatStore();
   
   const [activeTab, setActiveTab] = useState('account');
   const [name, setName] = useState(authUser?.name || '');
@@ -42,6 +44,12 @@ const SettingsPage = () => {
       return () => clearTimeout(timer);
     }
   }, [updateMessage]);
+
+  useEffect(() => {
+    if (activeTab === 'media') {
+      getSharedMediaGlobal();
+    }
+  }, [activeTab, getSharedMediaGlobal]);
 
   // Handle clicking outside the mobile dropdown menu
   useEffect(() => {
@@ -285,19 +293,23 @@ const SettingsPage = () => {
                   <MediaIcon className="text-primary" /> Shared Media
                 </h2>
                 <p className="text-base-content/70 mb-6">
-                  All photos, videos, and documents you have shared across your contacts.
+                  All photos and videos you have shared across your contacts.
                 </p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {/* Placeholder items */}
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className="aspect-square bg-base-200 rounded-xl flex items-center justify-center overflow-hidden hover:opacity-80 transition-opacity cursor-pointer shadow-sm border border-base-300">
-                      <ImageIcon className="text-base-300" size={48} />
-                    </div>
-                  ))}
-                </div>
-                <div className="text-center mt-8 p-8 border-2 border-dashed border-base-300 rounded-xl text-base-content/50">
-                  More media will appear here as you chat.
-                </div>
+                {isMediaLoading ? (
+                  <div className="text-center p-8"><span className="loading loading-spinner loading-lg text-primary"></span></div>
+                ) : sharedMediaGlobal.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    {sharedMediaGlobal.map((msg) => (
+                      <div key={msg.id} className="aspect-square bg-base-200 rounded-xl flex items-center justify-center overflow-hidden hover:opacity-80 transition-opacity cursor-pointer shadow-sm border border-base-300 relative group">
+                        <img src={msg.image} alt="Shared media" className="w-full h-full object-cover" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center mt-8 p-8 border-2 border-dashed border-base-300 rounded-xl text-base-content/50">
+                    More media will appear here as you chat.
+                  </div>
+                )}
               </section>
             </div>
           )}

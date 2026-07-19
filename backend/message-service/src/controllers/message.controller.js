@@ -178,3 +178,125 @@ export const deleteMessage = async (req, res) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export const getUnreadCounts = async (req, res) => {
+  try {
+    const myId = req.session.userId;
+    
+    // Group unread messages by conversationId where receiver is me
+    const unreadMessages = await prisma.message.groupBy({
+      by: ['conversationId'],
+      where: {
+        receiverId: myId,
+        isRead: false,
+      },
+      _count: {
+        id: true,
+      },
+    });
+
+    const unreadCounts = {};
+    unreadMessages.forEach((group) => {
+      unreadCounts[group.conversationId] = group._count.id;
+    });
+
+    return res.status(200).json({ success: true, data: unreadCounts });
+  } catch (error) {
+    console.error("Error in getUnreadCounts:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const markAsRead = async (req, res) => {
+  try {
+    const myId = req.session.userId;
+    const { id: userToChatId } = req.params;
+    const conversationId = [myId, userToChatId].sort().join('_');
+
+    const unreadMessages = await prisma.message.findMany({
+      where: {
+        conversationId,
+        receiverId: myId,
+        isRead: false
+      },
+      select: { id: true, senderId: true }
+    });
+
+    if (unreadMessages.length > 0) {
+      await prisma.message.updateMany({
+        where: {
+          conversationId,
+          receiverId: myId,
+          isRead: false
+        },
+        data: {
+          isRead: true
+        }
+      });
+
+      // Emit to sender
+      try {
+        const { io, userSockets } = await import('../../index.js');
+        const senderId = unreadMessages[0].senderId;
+        const senderSocketId = userSockets.get(senderId);
+        
+        if (senderSocketId) {
+          unreadMessages.forEach(msg => {
+            io.to(senderSocketId).emit('messageStatusUpdate', { messageId: msg.id, status: 'READ' });
+          });
+        }
+      } catch (socketErr) {
+        console.error('Socket Emission Error:', socketErr);
+      }
+    }
+
+    return res.status(200).json({ success: true, message: "Messages marked as read" });
+  } catch (error) {
+    console.error("Error in markAsRead:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const getSharedMediaGlobal = async (req, res) => {
+  try {
+    const myId = req.session.userId;
+    const mediaMessages = await prisma.message.findMany({
+      where: {
+        OR: [
+          { senderId: myId },
+          { receiverId: myId }
+        ],
+        image: { not: null },
+        isDeletedForEveryone: false,
+        NOT: { deletedBy: { has: myId } }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+    return res.status(200).json({ success: true, data: mediaMessages });
+  } catch (error) {
+    console.error("Error in getSharedMediaGlobal:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const getSharedMediaConversation = async (req, res) => {
+  try {
+    const myId = req.session.userId;
+    const { id: userToChatId } = req.params;
+    const conversationId = [myId, userToChatId].sort().join('_');
+
+    const mediaMessages = await prisma.message.findMany({
+      where: {
+        conversationId,
+        image: { not: null },
+        isDeletedForEveryone: false,
+        NOT: { deletedBy: { has: myId } }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+    return res.status(200).json({ success: true, data: mediaMessages });
+  } catch (error) {
+    console.error("Error in getSharedMediaConversation:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
