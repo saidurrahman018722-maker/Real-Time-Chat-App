@@ -68,7 +68,24 @@ export const deleteConversation = async (req, res) => {
       return res.status(404).json({ error: "Conversation not found" });
     }
 
-    // Add userId to deletedBy array
+    // Also mark all messages in this conversation as deleted by this user
+    const messages = await prisma.message.findMany({
+      where: {
+        conversationId: id,
+        NOT: { deletedBy: { has: userId } }
+      }
+    });
+
+    await prisma.$transaction(
+      messages.map(msg => 
+        prisma.message.update({
+          where: { id: msg.id },
+          data: { deletedBy: { push: userId } }
+        })
+      )
+    );
+
+    // Add userId to deletedBy array for the conversation itself
     const updated = await prisma.conversation.update({
       where: { id },
       data: {
@@ -84,6 +101,43 @@ export const deleteConversation = async (req, res) => {
     return res.status(200).json({ success: true, message: "Conversation deleted successfully" });
   } catch (error) {
     console.error("Error in deleteConversation: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const clearConversation = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.session.userId;
+
+    const conversation = await prisma.conversation.findUnique({
+      where: { id },
+      include: { participants: true }
+    });
+
+    if (!conversation || !conversation.participants.some(p => p.id === userId)) {
+      return res.status(404).json({ error: "Conversation not found" });
+    }
+
+    const messages = await prisma.message.findMany({
+      where: {
+        conversationId: id,
+        NOT: { deletedBy: { has: userId } }
+      }
+    });
+
+    await prisma.$transaction(
+      messages.map(msg => 
+        prisma.message.update({
+          where: { id: msg.id },
+          data: { deletedBy: { push: userId } }
+        })
+      )
+    );
+
+    return res.status(200).json({ success: true, message: "Chat cleared successfully" });
+  } catch (error) {
+    console.error("Error in clearConversation: ", error.message);
     return res.status(500).json({ error: "Internal server error" });
   }
 };

@@ -10,8 +10,8 @@ const NewChatModal = ({ isOpen, onClose }) => {
     if (!query.trim()) return contacts;
     const lowerQuery = query.toLowerCase();
     return contacts.filter(contact => 
-      contact.user.name.toLowerCase().includes(lowerQuery) || 
-      contact.user.email.toLowerCase().includes(lowerQuery)
+      contact.user?.name?.toLowerCase().includes(lowerQuery) || 
+      contact.user?.email?.toLowerCase().includes(lowerQuery)
     );
   }, [query, contacts]);
 
@@ -75,19 +75,19 @@ const NewChatModal = ({ isOpen, onClose }) => {
                 onClick={() => handleStartChat(contact.user)}
               >
                 <div className="avatar placeholder">
-                  {contact.user.profilePic ? (
+                  {contact.user?.profilePic ? (
                     <div className="w-10 rounded-full">
                       <img src={contact.user.profilePic} alt={contact.user.name} />
                     </div>
                   ) : (
                     <div className="bg-neutral text-neutral-content w-10 rounded-full">
-                      <span className="text-sm">{contact.user.name?.charAt(0) || contact.user.email?.charAt(0)}</span>
+                      <span className="text-sm">{contact.user?.name?.charAt(0) || contact.user?.email?.charAt(0) || '?'}</span>
                     </div>
                   )}
                 </div>
                 <div className="flex flex-col flex-1">
-                  <span className="font-semibold text-sm">{contact.user.name}</span>
-                  <span className="text-xs text-base-content/60 truncate">{contact.user.email}</span>
+                  <span className="font-semibold text-sm">{contact.user?.name || 'Unknown'}</span>
+                  <span className="text-xs text-base-content/60 truncate">{contact.user?.email || 'No email'}</span>
                 </div>
               </div>
             ))}

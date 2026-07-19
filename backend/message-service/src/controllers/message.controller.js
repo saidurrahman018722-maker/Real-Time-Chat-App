@@ -1,5 +1,6 @@
 import { prisma } from "../config/db.js";
 import cloudinary from "../utils/cloudinary.js";
+import { redis } from "../config/redis.connect.js";
 
 // --- MESSAGES ---
 
@@ -103,6 +104,12 @@ export const sendMessage = async (req, res) => {
     const { text, image, replyToId, isForwarded } = req.body;
     const { id: receiverId } = req.params;
     const senderId = req.session.userId;
+
+    // Check if the sender is blocked by the receiver
+    const isBlocked = await redis.get(`block:${receiverId}:${senderId}`);
+    if (isBlocked === 'true') {
+      return res.status(403).json({ error: "You are blocked by this user" });
+    }
 
     let imageUrl;
     if (image) {
@@ -240,7 +247,7 @@ export const getUnreadCounts = async (req, res) => {
       by: ['conversationId'],
       where: {
         receiverId: myId,
-        isRead: false,
+        status: { in: ['SENT', 'DELIVERED'] },
       },
       _count: {
         id: true,
@@ -255,6 +262,30 @@ export const getUnreadCounts = async (req, res) => {
     return res.status(200).json({ success: true, data: unreadCounts });
   } catch (error) {
     console.error("Error in getUnreadCounts:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const markConversationAsRead = async (req, res) => {
+  try {
+    const { userId } = req.params; // sender's id
+    const myId = req.session.userId; // receiver's id
+
+    // Mark all unread messages from this user to me as read
+    const updated = await prisma.message.updateMany({
+      where: {
+        senderId: userId,
+        receiverId: myId,
+        status: { in: ['SENT', 'DELIVERED'] },
+      },
+      data: {
+        status: 'READ',
+      },
+    });
+
+    return res.status(200).json({ success: true, updatedCount: updated.count });
+  } catch (error) {
+    console.error("Error in markConversationAsRead:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 };

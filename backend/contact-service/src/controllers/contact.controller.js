@@ -1,4 +1,5 @@
 import { prisma } from "../config/db.js";
+import { redis } from "../config/redis.connect.js";
 
 // Search users by exact email or by name (case-insensitive substring)
 export const searchUsers = async (req, res) => {
@@ -106,6 +107,103 @@ export const toggleFavorite = async (req, res) => {
     return res.status(200).json({ success: true, data: updatedContact });
   } catch (error) {
     console.error("Error in toggleFavorite: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const updateAlias = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { alias } = req.body;
+    const ownerId = req.session.userId;
+
+    const contact = await prisma.contact.findUnique({ 
+      where: { ownerId_userId: { ownerId, userId } } 
+    });
+    if (!contact) return res.status(404).json({ error: "Contact not found" });
+
+    const updated = await prisma.contact.update({
+      where: { ownerId_userId: { ownerId, userId } },
+      data: { alias },
+      include: { user: { select: { id: true, name: true, email: true, profilePic: true, lastSeen: true } } }
+    });
+
+    return res.status(200).json({ success: true, data: updated });
+  } catch (error) {
+    console.error("Error in updateAlias:", error.message);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const toggleBlock = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const ownerId = req.session.userId;
+
+    let contact = await prisma.contact.findUnique({ 
+      where: { ownerId_userId: { ownerId, userId } } 
+    });
+
+    let newBlockedStatus = true;
+    if (contact) {
+      newBlockedStatus = !contact.isBlocked;
+    }
+
+    const updated = await prisma.contact.upsert({
+      where: { ownerId_userId: { ownerId, userId } },
+      create: {
+        ownerId,
+        userId,
+        isBlocked: newBlockedStatus
+      },
+      update: {
+        isBlocked: newBlockedStatus
+      },
+      include: { user: { select: { id: true, name: true, email: true, profilePic: true, lastSeen: true } } }
+    });
+
+    // Sync with Redis for fast checking in message-service
+    if (newBlockedStatus) {
+      await redis.set(`block:${ownerId}:${userId}`, 'true');
+    } else {
+      await redis.del(`block:${ownerId}:${userId}`);
+    }
+
+    return res.status(200).json({ success: true, data: updated });
+  } catch (error) {
+    console.error("Error in toggleBlock:", error);
+    return res.status(500).json({ 
+      error: "Internal server error", 
+      message: error.message,
+      stack: error.stack 
+    });
+  }
+};
+
+export const reportContact = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const ownerId = req.session.userId;
+
+    let contact = await prisma.contact.findUnique({ 
+      where: { ownerId_userId: { ownerId, userId } } 
+    });
+
+    if (!contact) {
+      contact = await prisma.contact.create({
+        data: { ownerId, userId, isReported: true }
+      });
+    }
+
+    const updated = await prisma.contact.update({
+      where: { ownerId_userId: { ownerId, userId } },
+      data: { isReported: true },
+      include: { user: { select: { id: true, name: true, email: true, profilePic: true, lastSeen: true } } }
+    });
+
+    return res.status(200).json({ success: true, data: updated });
+  } catch (error) {
+    console.error("Error in reportContact:", error.message);
     return res.status(500).json({ error: "Internal server error" });
   }
 };

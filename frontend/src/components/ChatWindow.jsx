@@ -1,12 +1,12 @@
 import { useEffect, useState, useRef } from 'react';
 import { useChatStore } from '../store/useChatStore';
 import { useAuthStore } from '../store/useAuthStore';
-import { Send, Image, MoreVertical, MessageSquare, Check, CheckCheck, ArrowLeft, FileText, UserPlus, Sparkles } from 'lucide-react';
+import { Send, Image, MoreVertical, MessageSquare, Check, CheckCheck, ArrowLeft, FileText, UserPlus, Sparkles, Plus, User, X, Search, Star, Copy, Trash, Forward, CheckSquare, Square, Image as ImageIcon, Pin, ChevronDown, Ban } from 'lucide-react';
 import { format } from 'date-fns';
-import { Search, Star, Copy, Trash, Forward, X, CheckSquare, Square, Image as ImageIcon } from 'lucide-react';
 import ForwardMessageModal from './ForwardMessageModal';
 import BackgroundSelector from './BackgroundSelector';
 import SharedMediaModal from './SharedMediaModal';
+import ContactInfoPage from './ContactInfoPage';
 
 const ChatWindow = () => {
   const { contacts, messages, getMessages, sendMessage, deleteMessage, toggleFavoriteContact, selectedUser, setSelectedUser, isMessagesLoading, onlineUsers, socket, setIsAddContactOpen, markConversationAsRead, pendingMessage, togglePinMessage } = useChatStore();
@@ -26,12 +26,17 @@ const ChatWindow = () => {
   const [selectAction, setSelectAction] = useState(null); // 'delete' | 'forward'
   const [selectedMessageIds, setSelectedMessageIds] = useState([]);
   const [isMultiDeleteOpen, setIsMultiDeleteOpen] = useState(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const [isContactInfoOpen, setIsContactInfoOpen] = useState(false);
 
   const [replyingToMessage, setReplyingToMessage] = useState(null);
 
   const [isForwardOpen, setIsForwardOpen] = useState(false);
   const [isSharedMediaOpen, setIsSharedMediaOpen] = useState(false);
   
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
+  const [isConfirmUnblockOpen, setIsConfirmUnblockOpen] = useState(false);
+
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -46,9 +51,23 @@ const ChatWindow = () => {
     }
   }, [selectedUser?.id, getMessages, markConversationAsRead]);
 
+  const prevMessagesLengthRef = useRef(messages.length);
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messages.length !== prevMessagesLengthRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+    prevMessagesLengthRef.current = messages.length;
   }, [messages]);
+
+  const handleScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    if (scrollHeight - scrollTop - clientHeight > 100) {
+      setShowScrollButton(true);
+    } else {
+      setShowScrollButton(false);
+    }
+  };
 
   useEffect(() => {
     const handleBgChange = (e) => {
@@ -167,6 +186,8 @@ const ChatWindow = () => {
     !searchQuery || msg.text?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const pinnedMessages = messages.filter(m => m.isPinned);
+
   const handleToggleSelectMessage = (msgId) => {
     if (selectedMessageIds.includes(msgId)) {
       setSelectedMessageIds(selectedMessageIds.filter(id => id !== msgId));
@@ -201,8 +222,23 @@ const ChatWindow = () => {
     return msg?.senderId === authUser.id;
   });
 
+  const allSelectedPinned = selectedMessageIds.length > 0 && selectedMessageIds.every(id => {
+    const msg = messages.find(m => m.id === id);
+    return msg?.isPinned;
+  });
+
+  const handleBulkPin = () => {
+    selectedMessageIds.forEach(id => togglePinMessage(id));
+    setIsSelectMode(false);
+    setSelectedMessageIds([]);
+  };
+
+  if (isContactInfoOpen) {
+    return <ContactInfoPage onClose={() => setIsContactInfoOpen(false)} />;
+  }
+
   return (
-    <div className={`flex-1 flex flex-col bg-cover bg-center transition-all duration-300 ${chatBg}`}>
+    <div className={`flex-1 flex flex-col bg-cover bg-center transition-all duration-300 ${chatBg} relative`}>
       {isSelectMode ? (
         <div className="h-16 flex items-center justify-between px-6 bg-base-100/90 backdrop-blur-md border-b border-base-300 shadow-sm z-10 animate-fade-in">
           <div className="flex items-center gap-4">
@@ -226,6 +262,14 @@ const ChatWindow = () => {
                 onClick={() => setIsMultiDeleteOpen(true)}
               >
                 <Trash size={16} /> Delete
+              </button>
+            ) : selectAction === 'pin' ? (
+              <button 
+                className="btn btn-primary btn-sm gap-2"
+                disabled={selectedMessageIds.length === 0}
+                onClick={handleBulkPin}
+              >
+                <Pin size={16} className={allSelectedPinned ? 'fill-current' : ''} /> {allSelectedPinned ? 'Unpin' : 'Pin'}
               </button>
             ) : (
               <button 
@@ -275,6 +319,7 @@ const ChatWindow = () => {
                 <MoreVertical size={20} />
               </label>
               <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52 mt-4">
+                <li><button onClick={() => setIsContactInfoOpen(true)}><User size={16} /> Contact Info</button></li>
                 {currentContact && (
                   <li>
                     <button onClick={() => toggleFavoriteContact(currentContact.id)}>
@@ -285,6 +330,15 @@ const ChatWindow = () => {
                 )}
                 <li><button onClick={() => setIsSharedMediaOpen(true)}><ImageIcon size={16} /> Shared Media</button></li>
                 <li><button onClick={() => setIsSearching(!isSearching)}><Search size={16} /> Search Chat</button></li>
+                <li>
+                  <button onClick={() => {
+                    setIsSelectMode(true);
+                    setSelectAction('pin');
+                    setSelectedMessageIds([]);
+                  }}>
+                    <Pin size={16} /> Pin / Unpin Messages
+                  </button>
+                </li>
                 <li>
                   <button onClick={() => {
                     setIsSelectMode(true);
@@ -326,14 +380,43 @@ const ChatWindow = () => {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+      {pinnedMessages.length > 0 && !isSelectMode && (
+        <div className="bg-base-200/95 backdrop-blur-md border-b border-base-300 max-h-32 overflow-y-auto animate-slide-down shadow-inner z-10 flex flex-col">
+          {pinnedMessages.map(pinnedMsg => (
+            <div key={`pinned-${pinnedMsg.id}`} className="flex items-center justify-between px-6 py-2 border-b border-base-300 last:border-0 hover:bg-base-300/50 transition-colors group">
+              <div className="flex items-start gap-3 overflow-hidden cursor-pointer flex-1" onClick={() => {
+                document.getElementById(`message-${pinnedMsg.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }}>
+                <Pin size={14} className="text-primary mt-1 flex-shrink-0 fill-current" />
+                <div className="flex-1 min-w-0">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-primary block truncate">
+                    Pinned {pinnedMsg.senderId === authUser.id ? 'by You' : ''}
+                  </span>
+                  <span className="text-sm text-base-content/80 truncate block">
+                    {pinnedMsg.text || (pinnedMsg.image ? '📷 Photo' : 'Message')}
+                  </span>
+                </div>
+              </div>
+              <button 
+                className="btn btn-ghost btn-xs btn-circle text-base-content/50 hover:text-error transition-colors ml-2"
+                onClick={(e) => { e.stopPropagation(); togglePinMessage(pinnedMsg.id); }}
+                title="Unpin message"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto p-6 space-y-4 relative" onScroll={handleScroll}>
         {isMessagesLoading ? (
           <div className="text-center text-base-content/60 bg-base-100/50 p-2 rounded-lg inline-block mx-auto">Loading messages...</div>
         ) : (
           displayedMessages.map((msg, idx) => {
             const isMine = msg.senderId === authUser.id;
             return (
-              <div key={msg.id || idx} className={`chat ${isMine ? 'chat-end' : 'chat-start'} group items-center`}>
+              <div id={`message-${msg.id}`} key={msg.id || idx} className={`chat ${isMine ? 'chat-end' : 'chat-start'} group items-center`}>
                 {isSelectMode && !isMine && (
                   <button
                     className="mr-2 text-base-content/50 hover:text-primary transition-colors"
@@ -349,14 +432,11 @@ const ChatWindow = () => {
                       <button className="btn btn-ghost btn-xs btn-circle" onClick={() => setReplyingToMessage(msg)} title="Reply">
                         <MessageSquare size={14} />
                       </button>
-                      <button className="btn btn-ghost btn-xs btn-circle" onClick={() => togglePinMessage(msg.id)} title={msg.isPinned ? "Unpin" : "Pin"}>
-                        <Pin size={14} className={msg.isPinned ? 'fill-current' : ''} />
-                      </button>
                     </div>
                   )}
 
                   <div
-                    className={`chat-bubble shadow-md relative cursor-pointer hover:opacity-90 transition-opacity ${isMine ? 'chat-bubble-primary text-primary-content' : 'bg-base-100 text-base-content'} ${isSelectMode && selectedMessageIds.includes(msg.id) ? 'ring-2 ring-primary ring-offset-2 ring-offset-base-100' : ''}`}
+                    className={`chat-bubble shadow-md relative cursor-pointer hover:opacity-90 transition-opacity ${isMine ? 'chat-bubble-primary text-primary-content' : 'bg-base-100 text-base-content'} ${msg.image && !msg.text ? 'p-1 overflow-hidden' : ''} ${isSelectMode && selectedMessageIds.includes(msg.id) ? 'ring-2 ring-primary ring-offset-2 ring-offset-base-100' : ''}`}
                     onClick={() => {
                       if (isSelectMode) {
                         handleToggleSelectMessage(msg.id);
@@ -370,7 +450,10 @@ const ChatWindow = () => {
                     }}
                   >
                     {msg.isPinned && (
-                      <Pin size={12} className="absolute -top-1 -right-1 text-base-content/50 bg-base-200 rounded-full p-0.5" />
+                      <Pin 
+                        size={18} 
+                        className={`absolute top-2 right-2 z-10 rotate-[30deg] drop-shadow-md bg-base-100/30 backdrop-blur-sm rounded-full p-0.5 ${isMine ? 'text-primary-content fill-primary-content/80' : 'text-base-content fill-base-content/80'}`} 
+                      />
                     )}
                     {msg.isForwarded && (
                       <div className="flex items-center gap-1 text-[10px] opacity-70 mb-1 italic">
@@ -395,7 +478,7 @@ const ChatWindow = () => {
                       <img 
                         src={msg.image} 
                         alt="Attachment" 
-                        className="max-w-xs rounded-lg mb-2 hover:brightness-95 transition-all" 
+                        className={`max-w-xs rounded-lg hover:brightness-95 transition-all ${msg.text ? 'mb-2' : ''}`} 
                         onClick={(e) => {
                           if (!isSelectMode) {
                             e.stopPropagation();
@@ -412,9 +495,6 @@ const ChatWindow = () => {
                       <button className="btn btn-ghost btn-xs btn-circle" onClick={() => setReplyingToMessage(msg)} title="Reply">
                         <MessageSquare size={14} />
                       </button>
-                      <button className="btn btn-ghost btn-xs btn-circle" onClick={() => togglePinMessage(msg.id)} title={msg.isPinned ? "Unpin" : "Pin"}>
-                        <Pin size={14} className={msg.isPinned ? 'fill-current' : ''} />
-                      </button>
                     </div>
                   )}
                 </div>
@@ -428,7 +508,7 @@ const ChatWindow = () => {
                   </button>
                 )}
 
-                <div className="chat-footer opacity-70 text-xs mt-1 px-2 py-0.5 rounded-full flex items-center justify-end">
+                <div className="chat-footer opacity-70 text-xs mt-1 px-2 py-0.5 rounded-full flex items-center justify-end gap-1">
                   {msg.createdAt ? format(new Date(msg.createdAt), 'HH:mm') : ''}
                   {renderMessageStatus(msg)}
                 </div>
@@ -486,33 +566,76 @@ const ChatWindow = () => {
           </button>
         </div>
       )}
-        <form onSubmit={handleSend} className="p-4 bg-base-100/90 backdrop-blur-md border-t border-base-300 flex items-center gap-2">
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            ref={fileInputRef}
-            onChange={handleImageChange}
-          />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="btn btn-ghost btn-circle text-base-content/60 hover:text-base-content"
+        {showScrollButton && (
+          <button 
+            className="btn btn-circle btn-sm btn-primary absolute bottom-24 right-4 z-50 shadow-lg animate-bounce"
+            onClick={() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })}
           >
-            <Image size={22} />
+            <ChevronDown size={20} />
           </button>
-          <input
-            type="text"
-            placeholder="Type a message..."
-            className="input input-bordered flex-1 rounded-full bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary/50 border-none px-6"
-            value={text}
-            onChange={handleTyping}
-          />
-          <button type="submit" className="btn btn-primary btn-circle shadow-md" disabled={!text.trim() && !imagePreview}>
-            <Send size={20} />
-          </button>
-        </form>
-      )}
+        )}
+        {currentContact?.isBlocked ? (
+          <div className="p-4 bg-base-100/90 backdrop-blur-md border-t border-base-300 flex items-center justify-center gap-4 h-[72px]">
+            <button 
+              onClick={() => setIsConfirmDeleteOpen(true)}
+              className="flex items-center gap-2 px-6 py-2 rounded-full border border-[#3e4446] text-[#ea6d7e] hover:bg-[#2a2f32] transition-colors font-medium text-sm"
+            >
+              <Trash size={18} /> Delete chat
+            </button>
+            <button 
+              onClick={() => setIsConfirmUnblockOpen(true)}
+              className="flex items-center gap-2 px-6 py-2 rounded-full border border-[#3e4446] text-[#00a884] hover:bg-[#2a2f32] transition-colors font-medium text-sm"
+            >
+              <Ban size={18} /> Unblock
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSend} className="p-4 bg-base-100/90 backdrop-blur-md border-t border-base-300 flex items-center gap-2">
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              ref={fileInputRef}
+              onChange={handleImageChange}
+            />
+            <div className="dropdown dropdown-top dropdown-hover">
+              <div
+                tabIndex={0}
+                role="button"
+                className="btn btn-ghost btn-circle text-base-content/60 hover:text-base-content"
+              >
+                <Plus size={22} />
+              </div>
+              <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-40 mb-2 border border-base-300">
+                <li>
+                  <a onClick={() => {
+                    fileInputRef.current?.click();
+                    document.activeElement?.blur();
+                  }}>
+                    <Image size={18} /> Image
+                  </a>
+                </li>
+                <li>
+                  <a onClick={() => {
+                    document.activeElement?.blur();
+                  }}>
+                    <FileText size={18} /> Document
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <input
+              type="text"
+              placeholder="Type a message..."
+              className="input input-bordered flex-1 rounded-full bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary/50 border-none px-6"
+              value={text}
+              onChange={handleTyping}
+            />
+            <button type="submit" className="btn btn-primary btn-circle shadow-md" disabled={!text.trim() && !imagePreview}>
+              <Send size={20} />
+            </button>
+          </form>
+        )}
 
       {/* Multi-Delete Confirmation Modal */}
       {isMultiDeleteOpen && (
@@ -565,6 +688,15 @@ const ChatWindow = () => {
                   setSelectedMessage(null);
                 }}>
                   <Copy size={18} /> Copy text
+                </button>
+              </li>
+              <li>
+                <button onClick={() => {
+                  togglePinMessage(selectedMessage.id);
+                  setSelectedMessage(null);
+                }}>
+                  <Pin size={18} className={selectedMessage.isPinned ? 'fill-current' : ''} /> 
+                  {selectedMessage.isPinned ? 'Unpin message' : 'Pin message'}
                 </button>
               </li>
               <li>
@@ -673,6 +805,41 @@ const ChatWindow = () => {
             <X size={24} />
           </button>
           <img src={fullscreenImage} alt="Fullscreen" className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg animate-scale-in" onClick={e => e.stopPropagation()} />
+        </div>
+      )}
+
+      {/* Confirmation Modals for Blocked State */}
+      {isConfirmDeleteOpen && (
+        <div className="fixed inset-0 z-[80] flex justify-center items-center bg-black/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsConfirmDeleteOpen(false)}>
+          <div className="bg-base-100 p-6 rounded-2xl shadow-xl max-w-sm w-full m-4" onClick={e => e.stopPropagation()}>
+            <h3 className="text-xl font-bold mb-2">Delete chat?</h3>
+            <p className="text-base-content/70 mb-6">Are you sure you want to delete the entire chat history with {selectedUser?.name}? This action cannot be undone.</p>
+            <div className="flex gap-3 justify-end">
+              <button className="btn btn-ghost" onClick={() => setIsConfirmDeleteOpen(false)}>Cancel</button>
+              <button className="btn btn-error" onClick={async () => {
+                const conversation = useChatStore.getState().conversations.find(c => c.partner?.id === selectedUser.id);
+                if (conversation) {
+                  await useChatStore.getState().deleteChat(conversation.id);
+                }
+                setIsConfirmDeleteOpen(false);
+              }}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isConfirmUnblockOpen && (
+        <div className="fixed inset-0 z-[80] flex justify-center items-center bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setIsConfirmUnblockOpen(false)}>
+          <div className="bg-[#2a2d32] text-white p-6 rounded-2xl shadow-xl max-w-sm w-full m-4 border border-white/5" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-medium mb-8">Unblock {selectedUser?.name}?</h3>
+            <div className="flex gap-4 justify-end items-center">
+              <button className="text-[#00a884] font-medium hover:bg-white/5 px-4 py-2 rounded-full transition-colors" onClick={() => setIsConfirmUnblockOpen(false)}>Cancel</button>
+              <button className="bg-[#00a884] text-[#111b21] font-medium px-6 py-2 rounded-full hover:bg-[#00c299] transition-colors" onClick={async () => {
+                await useChatStore.getState().blockContact(selectedUser.id);
+                setIsConfirmUnblockOpen(false);
+              }}>Unblock</button>
+            </div>
+          </div>
         </div>
       )}
     </div>
