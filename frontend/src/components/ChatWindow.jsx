@@ -598,13 +598,32 @@ const ChatWindow = () => {
               ref={fileInputRef}
               onChange={handleImageChange}
             />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="btn btn-ghost btn-circle text-base-content/60 hover:text-base-content"
-            >
-              <Camera size={22} />
-            </button>
+            <div className="dropdown dropdown-top dropdown-hover">
+              <div
+                tabIndex={0}
+                role="button"
+                className="btn btn-ghost btn-circle text-base-content/60 hover:text-base-content"
+              >
+                <Plus size={22} />
+              </div>
+              <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-40 mb-2 border border-base-300">
+                <li>
+                  <a onClick={() => {
+                    fileInputRef.current?.click();
+                    document.activeElement?.blur();
+                  }}>
+                    <Image size={18} /> Image
+                  </a>
+                </li>
+                <li>
+                  <a onClick={() => {
+                    document.activeElement?.blur();
+                  }}>
+                    <FileText size={18} /> Document
+                  </a>
+                </li>
+              </ul>
+            </div>
             <input
               type="text"
               placeholder="Type a message..."
