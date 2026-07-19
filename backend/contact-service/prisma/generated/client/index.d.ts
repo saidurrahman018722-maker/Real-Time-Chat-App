@@ -2115,6 +2115,8 @@ export namespace Prisma {
     userId: string | null
     alias: string | null
     isFavorite: boolean | null
+    isBlocked: boolean | null
+    isReported: boolean | null
     createdAt: Date | null
   }
 
@@ -2124,6 +2126,8 @@ export namespace Prisma {
     userId: string | null
     alias: string | null
     isFavorite: boolean | null
+    isBlocked: boolean | null
+    isReported: boolean | null
     createdAt: Date | null
   }
 
@@ -2133,6 +2137,8 @@ export namespace Prisma {
     userId: number
     alias: number
     isFavorite: number
+    isBlocked: number
+    isReported: number
     createdAt: number
     _all: number
   }
@@ -2144,6 +2150,8 @@ export namespace Prisma {
     userId?: true
     alias?: true
     isFavorite?: true
+    isBlocked?: true
+    isReported?: true
     createdAt?: true
   }
 
@@ -2153,6 +2161,8 @@ export namespace Prisma {
     userId?: true
     alias?: true
     isFavorite?: true
+    isBlocked?: true
+    isReported?: true
     createdAt?: true
   }
 
@@ -2162,6 +2172,8 @@ export namespace Prisma {
     userId?: true
     alias?: true
     isFavorite?: true
+    isBlocked?: true
+    isReported?: true
     createdAt?: true
     _all?: true
   }
@@ -2244,6 +2256,8 @@ export namespace Prisma {
     userId: string
     alias: string | null
     isFavorite: boolean
+    isBlocked: boolean
+    isReported: boolean
     createdAt: Date
     _count: ContactCountAggregateOutputType | null
     _min: ContactMinAggregateOutputType | null
@@ -2270,6 +2284,8 @@ export namespace Prisma {
     userId?: boolean
     alias?: boolean
     isFavorite?: boolean
+    isBlocked?: boolean
+    isReported?: boolean
     createdAt?: boolean
     owner?: boolean | UserDefaultArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -2281,6 +2297,8 @@ export namespace Prisma {
     userId?: boolean
     alias?: boolean
     isFavorite?: boolean
+    isBlocked?: boolean
+    isReported?: boolean
     createdAt?: boolean
     owner?: boolean | UserDefaultArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -2292,6 +2310,8 @@ export namespace Prisma {
     userId?: boolean
     alias?: boolean
     isFavorite?: boolean
+    isBlocked?: boolean
+    isReported?: boolean
     createdAt?: boolean
     owner?: boolean | UserDefaultArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -2303,10 +2323,12 @@ export namespace Prisma {
     userId?: boolean
     alias?: boolean
     isFavorite?: boolean
+    isBlocked?: boolean
+    isReported?: boolean
     createdAt?: boolean
   }
 
-  export type ContactOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "ownerId" | "userId" | "alias" | "isFavorite" | "createdAt", ExtArgs["result"]["contact"]>
+  export type ContactOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "ownerId" | "userId" | "alias" | "isFavorite" | "isBlocked" | "isReported" | "createdAt", ExtArgs["result"]["contact"]>
   export type ContactInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     owner?: boolean | UserDefaultArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -2332,6 +2354,8 @@ export namespace Prisma {
       userId: string
       alias: string | null
       isFavorite: boolean
+      isBlocked: boolean
+      isReported: boolean
       createdAt: Date
     }, ExtArgs["result"]["contact"]>
     composites: {}
@@ -2763,6 +2787,8 @@ export namespace Prisma {
     readonly userId: FieldRef<"Contact", 'String'>
     readonly alias: FieldRef<"Contact", 'String'>
     readonly isFavorite: FieldRef<"Contact", 'Boolean'>
+    readonly isBlocked: FieldRef<"Contact", 'Boolean'>
+    readonly isReported: FieldRef<"Contact", 'Boolean'>
     readonly createdAt: FieldRef<"Contact", 'DateTime'>
   }
     
@@ -3214,6 +3240,8 @@ export namespace Prisma {
     userId: 'userId',
     alias: 'alias',
     isFavorite: 'isFavorite',
+    isBlocked: 'isBlocked',
+    isReported: 'isReported',
     createdAt: 'createdAt'
   };
 
@@ -3368,6 +3396,8 @@ export namespace Prisma {
     userId?: StringFilter<"Contact"> | string
     alias?: StringNullableFilter<"Contact"> | string | null
     isFavorite?: BoolFilter<"Contact"> | boolean
+    isBlocked?: BoolFilter<"Contact"> | boolean
+    isReported?: BoolFilter<"Contact"> | boolean
     createdAt?: DateTimeFilter<"Contact"> | Date | string
     owner?: XOR<UserScalarRelationFilter, UserWhereInput>
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
@@ -3379,6 +3409,8 @@ export namespace Prisma {
     userId?: SortOrder
     alias?: SortOrderInput | SortOrder
     isFavorite?: SortOrder
+    isBlocked?: SortOrder
+    isReported?: SortOrder
     createdAt?: SortOrder
     owner?: UserOrderByWithRelationInput
     user?: UserOrderByWithRelationInput
@@ -3394,6 +3426,8 @@ export namespace Prisma {
     userId?: StringFilter<"Contact"> | string
     alias?: StringNullableFilter<"Contact"> | string | null
     isFavorite?: BoolFilter<"Contact"> | boolean
+    isBlocked?: BoolFilter<"Contact"> | boolean
+    isReported?: BoolFilter<"Contact"> | boolean
     createdAt?: DateTimeFilter<"Contact"> | Date | string
     owner?: XOR<UserScalarRelationFilter, UserWhereInput>
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
@@ -3405,6 +3439,8 @@ export namespace Prisma {
     userId?: SortOrder
     alias?: SortOrderInput | SortOrder
     isFavorite?: SortOrder
+    isBlocked?: SortOrder
+    isReported?: SortOrder
     createdAt?: SortOrder
     _count?: ContactCountOrderByAggregateInput
     _max?: ContactMaxOrderByAggregateInput
@@ -3420,6 +3456,8 @@ export namespace Prisma {
     userId?: StringWithAggregatesFilter<"Contact"> | string
     alias?: StringNullableWithAggregatesFilter<"Contact"> | string | null
     isFavorite?: BoolWithAggregatesFilter<"Contact"> | boolean
+    isBlocked?: BoolWithAggregatesFilter<"Contact"> | boolean
+    isReported?: BoolWithAggregatesFilter<"Contact"> | boolean
     createdAt?: DateTimeWithAggregatesFilter<"Contact"> | Date | string
   }
 
@@ -3491,6 +3529,8 @@ export namespace Prisma {
     id?: string
     alias?: string | null
     isFavorite?: boolean
+    isBlocked?: boolean
+    isReported?: boolean
     createdAt?: Date | string
     owner: UserCreateNestedOneWithoutContactsInput
     user: UserCreateNestedOneWithoutSavedAsContactInput
@@ -3502,6 +3542,8 @@ export namespace Prisma {
     userId: string
     alias?: string | null
     isFavorite?: boolean
+    isBlocked?: boolean
+    isReported?: boolean
     createdAt?: Date | string
   }
 
@@ -3509,6 +3551,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     alias?: NullableStringFieldUpdateOperationsInput | string | null
     isFavorite?: BoolFieldUpdateOperationsInput | boolean
+    isBlocked?: BoolFieldUpdateOperationsInput | boolean
+    isReported?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutContactsNestedInput
     user?: UserUpdateOneRequiredWithoutSavedAsContactNestedInput
@@ -3520,6 +3564,8 @@ export namespace Prisma {
     userId?: StringFieldUpdateOperationsInput | string
     alias?: NullableStringFieldUpdateOperationsInput | string | null
     isFavorite?: BoolFieldUpdateOperationsInput | boolean
+    isBlocked?: BoolFieldUpdateOperationsInput | boolean
+    isReported?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -3529,6 +3575,8 @@ export namespace Prisma {
     userId: string
     alias?: string | null
     isFavorite?: boolean
+    isBlocked?: boolean
+    isReported?: boolean
     createdAt?: Date | string
   }
 
@@ -3536,6 +3584,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     alias?: NullableStringFieldUpdateOperationsInput | string | null
     isFavorite?: BoolFieldUpdateOperationsInput | boolean
+    isBlocked?: BoolFieldUpdateOperationsInput | boolean
+    isReported?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -3545,6 +3595,8 @@ export namespace Prisma {
     userId?: StringFieldUpdateOperationsInput | string
     alias?: NullableStringFieldUpdateOperationsInput | string | null
     isFavorite?: BoolFieldUpdateOperationsInput | boolean
+    isBlocked?: BoolFieldUpdateOperationsInput | boolean
+    isReported?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -3710,6 +3762,8 @@ export namespace Prisma {
     userId?: SortOrder
     alias?: SortOrder
     isFavorite?: SortOrder
+    isBlocked?: SortOrder
+    isReported?: SortOrder
     createdAt?: SortOrder
   }
 
@@ -3719,6 +3773,8 @@ export namespace Prisma {
     userId?: SortOrder
     alias?: SortOrder
     isFavorite?: SortOrder
+    isBlocked?: SortOrder
+    isReported?: SortOrder
     createdAt?: SortOrder
   }
 
@@ -3728,6 +3784,8 @@ export namespace Prisma {
     userId?: SortOrder
     alias?: SortOrder
     isFavorite?: SortOrder
+    isBlocked?: SortOrder
+    isReported?: SortOrder
     createdAt?: SortOrder
   }
 
@@ -4036,6 +4094,8 @@ export namespace Prisma {
     id?: string
     alias?: string | null
     isFavorite?: boolean
+    isBlocked?: boolean
+    isReported?: boolean
     createdAt?: Date | string
     user: UserCreateNestedOneWithoutSavedAsContactInput
   }
@@ -4045,6 +4105,8 @@ export namespace Prisma {
     userId: string
     alias?: string | null
     isFavorite?: boolean
+    isBlocked?: boolean
+    isReported?: boolean
     createdAt?: Date | string
   }
 
@@ -4062,6 +4124,8 @@ export namespace Prisma {
     id?: string
     alias?: string | null
     isFavorite?: boolean
+    isBlocked?: boolean
+    isReported?: boolean
     createdAt?: Date | string
     owner: UserCreateNestedOneWithoutContactsInput
   }
@@ -4071,6 +4135,8 @@ export namespace Prisma {
     ownerId: string
     alias?: string | null
     isFavorite?: boolean
+    isBlocked?: boolean
+    isReported?: boolean
     createdAt?: Date | string
   }
 
@@ -4109,6 +4175,8 @@ export namespace Prisma {
     userId?: StringFilter<"Contact"> | string
     alias?: StringNullableFilter<"Contact"> | string | null
     isFavorite?: BoolFilter<"Contact"> | boolean
+    isBlocked?: BoolFilter<"Contact"> | boolean
+    isReported?: BoolFilter<"Contact"> | boolean
     createdAt?: DateTimeFilter<"Contact"> | Date | string
   }
 
@@ -4237,6 +4305,8 @@ export namespace Prisma {
     userId: string
     alias?: string | null
     isFavorite?: boolean
+    isBlocked?: boolean
+    isReported?: boolean
     createdAt?: Date | string
   }
 
@@ -4245,6 +4315,8 @@ export namespace Prisma {
     ownerId: string
     alias?: string | null
     isFavorite?: boolean
+    isBlocked?: boolean
+    isReported?: boolean
     createdAt?: Date | string
   }
 
@@ -4252,6 +4324,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     alias?: NullableStringFieldUpdateOperationsInput | string | null
     isFavorite?: BoolFieldUpdateOperationsInput | boolean
+    isBlocked?: BoolFieldUpdateOperationsInput | boolean
+    isReported?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     user?: UserUpdateOneRequiredWithoutSavedAsContactNestedInput
   }
@@ -4261,6 +4335,8 @@ export namespace Prisma {
     userId?: StringFieldUpdateOperationsInput | string
     alias?: NullableStringFieldUpdateOperationsInput | string | null
     isFavorite?: BoolFieldUpdateOperationsInput | boolean
+    isBlocked?: BoolFieldUpdateOperationsInput | boolean
+    isReported?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -4269,6 +4345,8 @@ export namespace Prisma {
     userId?: StringFieldUpdateOperationsInput | string
     alias?: NullableStringFieldUpdateOperationsInput | string | null
     isFavorite?: BoolFieldUpdateOperationsInput | boolean
+    isBlocked?: BoolFieldUpdateOperationsInput | boolean
+    isReported?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -4276,6 +4354,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     alias?: NullableStringFieldUpdateOperationsInput | string | null
     isFavorite?: BoolFieldUpdateOperationsInput | boolean
+    isBlocked?: BoolFieldUpdateOperationsInput | boolean
+    isReported?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutContactsNestedInput
   }
@@ -4285,6 +4365,8 @@ export namespace Prisma {
     ownerId?: StringFieldUpdateOperationsInput | string
     alias?: NullableStringFieldUpdateOperationsInput | string | null
     isFavorite?: BoolFieldUpdateOperationsInput | boolean
+    isBlocked?: BoolFieldUpdateOperationsInput | boolean
+    isReported?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -4293,6 +4375,8 @@ export namespace Prisma {
     ownerId?: StringFieldUpdateOperationsInput | string
     alias?: NullableStringFieldUpdateOperationsInput | string | null
     isFavorite?: BoolFieldUpdateOperationsInput | boolean
+    isBlocked?: BoolFieldUpdateOperationsInput | boolean
+    isReported?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 

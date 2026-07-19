@@ -8,7 +8,9 @@ import {
   getSharedMediaGlobal,
   getSharedMediaConversation,
   togglePinMessage,
-  forwardMessages
+  forwardMessages,
+  getUnreadCounts,
+  markConversationAsRead
 } from "../controllers/message.controller.js";
 
 const router = express.Router();
@@ -25,6 +27,12 @@ router.get("/media/global", getSharedMediaGlobal);
 
 // Get shared media for a specific conversation
 router.get("/media/:id", getSharedMediaConversation);
+
+// Get unread counts
+router.get("/unread-counts", getUnreadCounts);
+
+// Mark conversation as read
+router.post("/mark-read/:userId", markConversationAsRead);
 
 // Get message history with a specific user
 router.get("/:id", getMessageByUserId);
