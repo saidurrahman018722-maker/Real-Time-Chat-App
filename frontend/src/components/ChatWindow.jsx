@@ -3,7 +3,7 @@ import { useChatStore } from '../store/useChatStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { Send, Image, MoreVertical, MessageSquare, Check, CheckCheck, ArrowLeft, FileText, UserPlus, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
-import { Search, Star, Copy, Trash, Forward, X, CheckSquare, Square, Image as ImageIcon } from 'lucide-react';
+import { Search, Star, Copy, Trash, Forward, X, CheckSquare, Square, Image as ImageIcon, Camera } from 'lucide-react';
 import ForwardMessageModal from './ForwardMessageModal';
 import BackgroundSelector from './BackgroundSelector';
 import SharedMediaModal from './SharedMediaModal';
@@ -20,7 +20,7 @@ const ChatWindow = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [fullscreenImage, setFullscreenImage] = useState(null);
-  
+
   // Select Mode State
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectAction, setSelectAction] = useState(null); // 'delete' | 'forward'
@@ -31,7 +31,7 @@ const ChatWindow = () => {
 
   const [isForwardOpen, setIsForwardOpen] = useState(false);
   const [isSharedMediaOpen, setIsSharedMediaOpen] = useState(false);
-  
+
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -220,7 +220,7 @@ const ChatWindow = () => {
           </div>
           <div>
             {selectAction === 'delete' ? (
-              <button 
+              <button
                 className="btn btn-error btn-sm gap-2"
                 disabled={selectedMessageIds.length === 0}
                 onClick={() => setIsMultiDeleteOpen(true)}
@@ -228,7 +228,7 @@ const ChatWindow = () => {
                 <Trash size={16} /> Delete
               </button>
             ) : (
-              <button 
+              <button
                 className="btn btn-primary btn-sm gap-2"
                 disabled={selectedMessageIds.length === 0}
                 onClick={() => setIsForwardOpen(true)}
@@ -378,7 +378,7 @@ const ChatWindow = () => {
                       </div>
                     )}
                     {msg.replyTo && (
-                      <div 
+                      <div
                         className={`text-xs p-2 rounded mb-2 border-l-4 cursor-pointer ${isMine ? 'bg-primary-focus border-base-100/50' : 'bg-base-200 border-primary'}`}
                         onClick={() => {
                           // Scroll to message (optional)
@@ -392,10 +392,10 @@ const ChatWindow = () => {
                     )}
 
                     {msg.image && (
-                      <img 
-                        src={msg.image} 
-                        alt="Attachment" 
-                        className="max-w-xs rounded-lg mb-2 hover:brightness-95 transition-all" 
+                      <img
+                        src={msg.image}
+                        alt="Attachment"
+                        className="max-w-xs rounded-lg mb-2 hover:brightness-95 transition-all"
                         onClick={(e) => {
                           if (!isSelectMode) {
                             e.stopPropagation();
@@ -436,16 +436,16 @@ const ChatWindow = () => {
             );
           })
         )}
-        
+
         {pendingMessage && pendingMessage.receiverId === selectedUser.id && (
           <div className="chat chat-end group items-center animate-fade-in">
             <div className="chat-bubble shadow-md relative chat-bubble-primary text-primary-content opacity-80">
               {pendingMessage.image && (
                 <div className="relative">
-                   <img src={pendingMessage.image} alt="Uploading" className="max-w-xs rounded-lg mb-2 blur-[2px]" />
-                   <div className="absolute inset-0 flex items-center justify-center">
-                     <span className="loading loading-spinner loading-md text-base-100"></span>
-                   </div>
+                  <img src={pendingMessage.image} alt="Uploading" className="max-w-xs rounded-lg mb-2 blur-[2px]" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="loading loading-spinner loading-md text-base-100"></span>
+                  </div>
                 </div>
               )}
               {pendingMessage.text && <p>{pendingMessage.text}</p>}
@@ -486,33 +486,33 @@ const ChatWindow = () => {
           </button>
         </div>
       )}
-        <form onSubmit={handleSend} className="p-4 bg-base-100/90 backdrop-blur-md border-t border-base-300 flex items-center gap-2">
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            ref={fileInputRef}
-            onChange={handleImageChange}
-          />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="btn btn-ghost btn-circle text-base-content/60 hover:text-base-content"
-          >
-            <Image size={22} />
-          </button>
-          <input
-            type="text"
-            placeholder="Type a message..."
-            className="input input-bordered flex-1 rounded-full bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary/50 border-none px-6"
-            value={text}
-            onChange={handleTyping}
-          />
-          <button type="submit" className="btn btn-primary btn-circle shadow-md" disabled={!text.trim() && !imagePreview}>
-            <Send size={20} />
-          </button>
-        </form>
-      )}
+      <form onSubmit={handleSend} className="p-4 bg-base-100/90 backdrop-blur-md border-t border-base-300 flex items-center gap-2">
+        <input
+          type="file"
+          accept="image/*"
+          className="hidden"
+          ref={fileInputRef}
+          onChange={handleImageChange}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="btn btn-ghost btn-circle text-base-content/60 hover:text-base-content"
+        >
+          <Camera size={22} />
+        </button>
+        <input
+          type="text"
+          placeholder="Type a message..."
+          className="input input-bordered flex-1 rounded-full bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary/50 border-none px-6"
+          value={text}
+          onChange={handleTyping}
+        />
+        <button type="submit" className="btn btn-primary btn-circle shadow-md" disabled={!text.trim() && !imagePreview}>
+          <Send size={20} />
+        </button>
+      </form>
+
 
       {/* Multi-Delete Confirmation Modal */}
       {isMultiDeleteOpen && (
@@ -661,9 +661,9 @@ const ChatWindow = () => {
       )}
 
       {/* Shared Media Modal */}
-      <SharedMediaModal 
-        isOpen={isSharedMediaOpen} 
-        onClose={() => setIsSharedMediaOpen(false)} 
+      <SharedMediaModal
+        isOpen={isSharedMediaOpen}
+        onClose={() => setIsSharedMediaOpen(false)}
       />
 
       {/* Fullscreen Image Modal */}
@@ -673,7 +673,7 @@ const ChatWindow = () => {
             <X size={24} />
           </button>
           <img src={fullscreenImage} alt="Fullscreen" className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg animate-scale-in" onClick={e => e.stopPropagation()} />
-        </div>
+                  </div>
       )}
     </div>
   );
