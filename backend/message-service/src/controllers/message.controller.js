@@ -256,3 +256,47 @@ export const markAsRead = async (req, res) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export const getSharedMediaGlobal = async (req, res) => {
+  try {
+    const myId = req.session.userId;
+    const mediaMessages = await prisma.message.findMany({
+      where: {
+        OR: [
+          { senderId: myId },
+          { receiverId: myId }
+        ],
+        image: { not: null },
+        isDeletedForEveryone: false,
+        NOT: { deletedBy: { has: myId } }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+    return res.status(200).json({ success: true, data: mediaMessages });
+  } catch (error) {
+    console.error("Error in getSharedMediaGlobal:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const getSharedMediaConversation = async (req, res) => {
+  try {
+    const myId = req.session.userId;
+    const { id: userToChatId } = req.params;
+    const conversationId = [myId, userToChatId].sort().join('_');
+
+    const mediaMessages = await prisma.message.findMany({
+      where: {
+        conversationId,
+        image: { not: null },
+        isDeletedForEveryone: false,
+        NOT: { deletedBy: { has: myId } }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+    return res.status(200).json({ success: true, data: mediaMessages });
+  } catch (error) {
+    console.error("Error in getSharedMediaConversation:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};

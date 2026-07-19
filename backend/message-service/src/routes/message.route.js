@@ -6,7 +6,9 @@ import {
   sendMessage,
   deleteMessage,
   getUnreadCounts,
-  markAsRead
+  markAsRead,
+  getSharedMediaGlobal,
+  getSharedMediaConversation
 } from "../controllers/message.controller.js";
 
 const router = express.Router();
@@ -18,6 +20,12 @@ router.use(standardLimiter);
 router.use(authMiddleware);
 
 // --- Messages ---
+// Get all shared media for the user globally
+router.get("/media/global", getSharedMediaGlobal);
+
+// Get shared media for a specific conversation
+router.get("/media/:id", getSharedMediaConversation);
+
 // Get unread message counts for all conversations
 router.get("/unread-counts", getUnreadCounts);
 

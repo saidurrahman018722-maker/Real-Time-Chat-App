@@ -8,10 +8,14 @@ export const useChatStore = create((set, get) => ({
   conversations: [],
   contacts: [],
   messages: [],
+  sharedMediaGlobal: [],
+  sharedMediaConversation: [],
   selectedUser: null,
   isConversationsLoading: false,
   isMessagesLoading: false,
+  isMediaLoading: false,
   isAddContactOpen: false,
+  pendingMessage: null,
   socket: null,
   onlineUsers: {}, // map of userId -> status/lastSeen
   unreadCounts: {}, // map of conversationId -> count
@@ -173,25 +177,41 @@ export const useChatStore = create((set, get) => ({
     try {
       const res = await axiosInstance.get(`/message/${userId}`);
       const fetchedMessages = res.data.data;
-      set({ messages: fetchedMessages });
+      
+      // Prevent race conditions: only update if we are still looking at this user
+      if (get().selectedUser?.id === userId) {
+        set({ messages: fetchedMessages });
+      }
       
       // Mark as read is now handled concurrently by ChatWindow calling markConversationAsRead 
       // which hits the backend HTTP endpoint, updating DB and emitting to the sender.
     } catch (error) {
       console.log('Error fetching messages:', error);
     } finally {
-      set({ isMessagesLoading: false });
+      if (get().selectedUser?.id === userId) {
+        set({ isMessagesLoading: false });
+      }
     }
   },
 
   sendMessage: async (messageData) => {
-    const { selectedUser, messages, conversations } = get();
+    // Capture receiver ID before the await
+    const receiverId = get().selectedUser?.id;
+    if (!receiverId) return;
+    
+    set({ pendingMessage: { ...messageData, receiverId } });
+
     try {
-      const res = await axiosInstance.post(`/message/send/${selectedUser.id}`, messageData);
+      const res = await axiosInstance.post(`/message/send/${receiverId}`, messageData);
       const newMsg = res.data.data;
       
-      // Update messages list
-      set({ messages: [...messages, newMsg] });
+      // Get current state AFTER the await to prevent race conditions
+      const { selectedUser, messages, conversations } = get();
+      
+      // Only append to the messages list if the user hasn't switched chats
+      if (selectedUser?.id === receiverId) {
+        set({ messages: [...messages, newMsg] });
+      }
 
       // Update conversations list for the sidebar
       const exists = conversations.some(c => c.id === newMsg.conversationId);
@@ -210,6 +230,10 @@ export const useChatStore = create((set, get) => ({
       }
     } catch (error) {
       console.log('Error sending message:', error);
+    } finally {
+      if (get().pendingMessage?.receiverId === receiverId) {
+        set({ pendingMessage: null });
+      }
     }
   },
 
@@ -249,9 +273,12 @@ export const useChatStore = create((set, get) => ({
   },
 
   forwardMessage: async (messageData, receiverId) => {
-    const { selectedUser, messages } = get();
     try {
       const res = await axiosInstance.post(`/message/send/${receiverId}`, messageData);
+      
+      // Get state AFTER the await to prevent race conditions
+      const { selectedUser, messages } = get();
+      
       // If we are currently looking at the chat we forwarded to, add it to the view
       if (selectedUser?.id === receiverId) {
         set({ messages: [...messages, res.data.data] });
@@ -260,6 +287,30 @@ export const useChatStore = create((set, get) => ({
     } catch (error) {
       console.log('Error forwarding message:', error);
       return { success: false };
+    }
+  },
+
+  getSharedMediaGlobal: async () => {
+    set({ isMediaLoading: true });
+    try {
+      const res = await axiosInstance.get('/message/media/global');
+      set({ sharedMediaGlobal: res.data.data });
+    } catch (error) {
+      console.log('Error fetching global media:', error);
+    } finally {
+      set({ isMediaLoading: false });
+    }
+  },
+
+  getSharedMediaConversation: async (userId) => {
+    set({ isMediaLoading: true });
+    try {
+      const res = await axiosInstance.get(`/message/media/${userId}`);
+      set({ sharedMediaConversation: res.data.data });
+    } catch (error) {
+      console.log('Error fetching conversation media:', error);
+    } finally {
+      set({ isMediaLoading: false });
     }
   },
 
