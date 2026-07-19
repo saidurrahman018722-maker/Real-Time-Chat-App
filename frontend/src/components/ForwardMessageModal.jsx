@@ -12,7 +12,8 @@ const ForwardMessageModal = ({ isOpen, onClose, messageIds }) => {
 
   const filteredContacts = contacts.filter((contact) =>
     contact.alias?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    contact.user.name.toLowerCase().includes(searchTerm.toLowerCase())
+    contact.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    contact.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const recentChats = conversations.slice(0, 5).map(conv => conv.partner);
@@ -33,7 +34,8 @@ const ForwardMessageModal = ({ isOpen, onClose, messageIds }) => {
   };
 
   const renderUserItem = (user, alias = null) => {
-    const displayName = alias || user.name;
+    if (!user) return null;
+    const displayName = alias || user.name || 'Unknown';
     return (
       <div 
         key={user.id} 

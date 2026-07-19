@@ -31,6 +31,8 @@ model Contact {
   user      User     @relation("ContactUser", fields: [userId], references: [id], onDelete: Cascade)
   alias     String?
   isFavorite Boolean  @default(false)
+  isBlocked  Boolean  @default(false)
+  isReported Boolean  @default(false)
   createdAt DateTime @default(now())
 
   @@unique([ownerId, userId])

@@ -296,6 +296,70 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
+  clearChat: async (conversationId) => {
+    try {
+      await axiosInstance.put(`/message/conversation/${conversationId}/clear`);
+      set({ messages: [] }); // clear locally
+    } catch (error) {
+      console.log('Error clearing chat:', error);
+    }
+  },
+
+  deleteChat: async (conversationId) => {
+    try {
+      await axiosInstance.delete(`/message/conversation/${conversationId}`);
+      set((state) => ({
+        conversations: state.conversations.filter(c => c.id !== conversationId),
+        selectedUser: null,
+        messages: []
+      }));
+    } catch (error) {
+      console.log('Error deleting chat:', error);
+    }
+  },
+
+  blockContact: async (userId) => {
+    try {
+      const res = await axiosInstance.put(`/contact/${userId}/block`);
+      const updatedContact = res.data.data;
+      set((state) => {
+        const exists = state.contacts.some((c) => c.userId === userId);
+        if (exists) {
+          return {
+            contacts: state.contacts.map((c) =>
+              c.userId === userId ? { ...c, isBlocked: updatedContact.isBlocked } : c
+            ),
+          };
+        } else {
+          return {
+            contacts: [...state.contacts, updatedContact],
+          };
+        }
+      });
+    } catch (error) {
+      console.log('Error blocking contact:', error.response?.data || error.message);
+    }
+  },
+
+  reportContact: async (userId) => {
+    try {
+      await axiosInstance.put(`/contact/${userId}/report`);
+    } catch (error) {
+      console.log('Error reporting contact:', error);
+    }
+  },
+
+  updateContactAlias: async (userId, alias) => {
+    try {
+      const res = await axiosInstance.put(`/contact/${userId}/alias`, { alias });
+      set((state) => ({
+        contacts: state.contacts.map(c => c.userId === userId ? res.data.data : c)
+      }));
+    } catch (error) {
+      console.log('Error updating contact alias:', error);
+    }
+  },
+
   deleteMessage: async (messageId, forEveryone) => {
     try {
       await axiosInstance.delete(`/message/${messageId}`, { data: { forEveryone } });

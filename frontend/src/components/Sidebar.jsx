@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useChatStore } from '../store/useChatStore';
 import { useAuthStore } from '../store/useAuthStore';
-import { Search, UserPlus, Settings, MessageSquarePlus, Star, Check, CheckCheck, Pin } from 'lucide-react';
+import { Search, UserPlus, Settings, MessageSquarePlus, Star, Check, CheckCheck, Pin, Camera } from 'lucide-react';
 import { format } from 'date-fns';
 
 import { Link } from 'react-router-dom';
@@ -95,7 +95,7 @@ const Sidebar = () => {
                     <span className="text-lg">{conv.partner.name.charAt(0)}</span>
                   </div>
                 )}
-                {(onlineUsers[conv.partner.id] === 'online' || conv.partner.lastSeen === 'online') && (
+                {((onlineUsers[conv.partner.id] || conv.partner.lastSeen) === 'online') && (
                   <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-base-100 rounded-full z-10"></span>
                 )}
               </div>
@@ -125,7 +125,7 @@ const Sidebar = () => {
                       {conv.lastMessage?.text ? (
                         conv.lastMessage.text
                       ) : conv.lastMessage?.image ? (
-                        <><img src={conv.lastMessage.image} alt="Image" className="h-5 w-5 object-cover rounded mr-1" /> Photo</>
+                        <><Camera size={16} className="mr-1" /> Photo</>
                       ) : (
                         'Started a conversation'
                       )}
