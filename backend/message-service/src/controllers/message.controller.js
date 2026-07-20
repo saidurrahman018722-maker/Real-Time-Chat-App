@@ -72,9 +72,7 @@ export const getMessageByUserId = async (req, res) => {
       take: Number(limit),
       ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
       orderBy: { createdAt: "desc" },
-      include: {
-        replyTo: true
-      }
+      include: { replyTo: true, sharedContact: true, reactions: true }
     });
 
     // Reverse to get chronological order for display
@@ -101,7 +99,7 @@ export const getMessageByUserId = async (req, res) => {
 
 export const sendMessage = async (req, res) => {
   try {
-    const { text, image, replyToId, isForwarded } = req.body;
+    const { text, image, audio, video, document, replyToId, isForwarded, sharedContactId } = req.body;
     const { id: receiverId } = req.params;
     const senderId = req.session.userId;
 
@@ -111,10 +109,22 @@ export const sendMessage = async (req, res) => {
       return res.status(403).json({ error: "You are blocked by this user" });
     }
 
-    let imageUrl;
+    let imageUrl, audioUrl, videoUrl, documentUrl;
     if (image) {
       const uploadResponse = await cloudinary.uploader.upload(image);
       imageUrl = uploadResponse.secure_url;
+    }
+    if (audio) {
+      const uploadResponse = await cloudinary.uploader.upload(audio, { resource_type: "video" });
+      audioUrl = uploadResponse.secure_url;
+    }
+    if (video) {
+      const uploadResponse = await cloudinary.uploader.upload(video, { resource_type: "video" });
+      videoUrl = uploadResponse.secure_url;
+    }
+    if (document) {
+      const uploadResponse = await cloudinary.uploader.upload(document, { resource_type: "auto" });
+      documentUrl = uploadResponse.secure_url;
     }
 
     const conversationId = [senderId, receiverId].sort().join('_');
@@ -139,12 +149,14 @@ export const sendMessage = async (req, res) => {
         conversationId: conversation.id,
         text,
         image: imageUrl,
+        audio: audioUrl,
+        video: videoUrl,
+        document: documentUrl,
         replyToId: replyToId || null,
-        isForwarded: isForwarded || false
+        isForwarded: isForwarded || false,
+        sharedContactId: sharedContactId || null
       },
-      include: {
-        replyTo: true
-      }
+      include: { replyTo: true, sharedContact: true, reactions: true }
     });
 
     // 3. Update Conversation updatedAt
@@ -220,7 +232,10 @@ export const deleteMessage = async (req, res) => {
         data: { 
           isDeletedForEveryone: true,
           text: null, // Clear the content from DB for privacy
-          image: null
+          image: null,
+          video: null,
+          audio: null,
+          document: null
         }
       });
     } else {
@@ -380,6 +395,65 @@ export const forwardMessages = async (req, res) => {
     return res.status(201).json({ success: true, data: newMessages });
   } catch (error) {
     console.error('Error in forwardMessages:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const reactToMessage = async (req, res) => {
+  try {
+    const { id: messageId } = req.params;
+    const { emoji } = req.body;
+    const userId = req.session.userId;
+
+    const message = await prisma.message.findUnique({
+      where: { id: messageId }
+    });
+
+    if (!message) {
+      return res.status(404).json({ error: "Message not found" });
+    }
+
+    const existingReaction = await prisma.reaction.findUnique({
+      where: { userId_messageId: { userId, messageId } }
+    });
+
+    let action = 'upsert';
+
+    if (existingReaction && existingReaction.emoji === emoji) {
+      await prisma.reaction.delete({
+        where: { id: existingReaction.id }
+      });
+      action = 'delete';
+    } else {
+      await prisma.reaction.upsert({
+        where: { userId_messageId: { userId, messageId } },
+        update: { emoji },
+        create: { emoji, userId, messageId }
+      });
+      action = 'upsert';
+    }
+
+    const updatedMessage = await prisma.message.findUnique({
+      where: { id: messageId },
+      include: { reactions: true, replyTo: true, sharedContact: true }
+    });
+
+    const otherUserId = message.senderId === userId ? message.receiverId : message.senderId;
+    if (otherUserId) {
+      try {
+        const { io, userSockets } = await import('../../index.js');
+        const otherSocketId = userSockets.get(otherUserId);
+        if (otherSocketId) {
+          io.to(otherSocketId).emit('messageReactionUpdated', { messageId, reactions: updatedMessage.reactions });
+        }
+      } catch (err) {
+        console.error('Socket emission error for reaction:', err);
+      }
+    }
+
+    return res.status(200).json({ success: true, action, message: updatedMessage });
+  } catch (error) {
+    console.error('Error in reactToMessage:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };

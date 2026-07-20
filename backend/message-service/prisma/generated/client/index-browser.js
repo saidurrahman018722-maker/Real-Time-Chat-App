@@ -143,6 +143,10 @@ exports.Prisma.MessageScalarFieldEnum = {
   replyToId: 'replyToId',
   text: 'text',
   image: 'image',
+  audio: 'audio',
+  video: 'video',
+  document: 'document',
+  sharedContactId: 'sharedContactId',
   status: 'status',
   isDeletedForEveryone: 'isDeletedForEveryone',
   deletedBy: 'deletedBy',
@@ -150,6 +154,14 @@ exports.Prisma.MessageScalarFieldEnum = {
   isPinned: 'isPinned',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ReactionScalarFieldEnum = {
+  id: 'id',
+  emoji: 'emoji',
+  userId: 'userId',
+  messageId: 'messageId',
+  createdAt: 'createdAt'
 };
 
 exports.Prisma.SortOrder = {
@@ -175,7 +187,8 @@ exports.MessageStatus = exports.$Enums.MessageStatus = {
 exports.Prisma.ModelName = {
   User: 'User',
   Conversation: 'Conversation',
-  Message: 'Message'
+  Message: 'Message',
+  Reaction: 'Reaction'
 };
 
 /**

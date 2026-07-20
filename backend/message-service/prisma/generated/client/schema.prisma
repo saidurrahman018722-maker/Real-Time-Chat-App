@@ -23,6 +23,8 @@ model User {
   sentMessages     Message[]      @relation("SentMessages")
   receivedMessages Message[]      @relation("ReceivedMessages")
   conversations    Conversation[] @relation("UserConversations")
+  sharedContacts   Message[]      @relation("SharedContact")
+  reactions        Reaction[]
 }
 
 model Conversation {
@@ -43,11 +45,18 @@ model Message {
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   replyToId String?
-  replyTo   Message?  @relation("MessageReplies", fields: [replyToId], references: [id])
-  replies   Message[] @relation("MessageReplies")
+  replyTo   Message?   @relation("MessageReplies", fields: [replyToId], references: [id])
+  replies   Message[]  @relation("MessageReplies")
+  reactions Reaction[] @relation("MessageReactions")
 
-  text  String?
-  image String?
+  text     String?
+  image    String?
+  audio    String?
+  video    String?
+  document String?
+
+  sharedContactId String?
+  sharedContact   User?   @relation("SharedContact", fields: [sharedContactId], references: [id])
 
   status               MessageStatus @default(SENT)
   isDeletedForEveryone Boolean       @default(false)
@@ -64,4 +73,17 @@ model Message {
   @@index([senderId, receiverId])
   @@index([receiverId])
   @@index([conversationId])
+}
+
+model Reaction {
+  id        String   @id @default(uuid())
+  emoji     String
+  userId    String
+  messageId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  message Message @relation("MessageReactions", fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, messageId])
 }

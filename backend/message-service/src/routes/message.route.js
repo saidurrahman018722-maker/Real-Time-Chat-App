@@ -10,7 +10,8 @@ import {
   togglePinMessage,
   forwardMessages,
   getUnreadCounts,
-  markConversationAsRead
+  markConversationAsRead,
+  reactToMessage
 } from "../controllers/message.controller.js";
 
 const router = express.Router();
@@ -45,6 +46,9 @@ router.post("/forward", forwardMessages);
 
 // Toggle pin for a message
 router.put("/:id/pin", togglePinMessage);
+
+// React to a message
+router.post("/:id/react", reactToMessage);
 
 // Delete a specific message
 router.delete("/:id", deleteMessage);

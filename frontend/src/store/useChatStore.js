@@ -13,6 +13,8 @@ export const useChatStore = create((set, get) => ({
   selectedUser: null,
   isConversationsLoading: false,
   isMessagesLoading: false,
+  isMoreMessagesLoading: false,
+  hasMoreMessages: true,
   isMediaLoading: false,
   isAddContactOpen: false,
   pendingMessage: null,
@@ -101,6 +103,14 @@ export const useChatStore = create((set, get) => ({
       set((state) => ({
         messages: state.messages.map((msg) =>
           msg.id === messageId ? { ...msg, isPinned } : msg
+        )
+      }));
+    });
+
+    newSocket.on('messageReactionUpdated', ({ messageId, reactions }) => {
+      set((state) => ({
+        messages: state.messages.map((msg) =>
+          msg.id === messageId ? { ...msg, reactions } : msg
         )
       }));
     });
@@ -217,26 +227,46 @@ export const useChatStore = create((set, get) => ({
   getMessages: async (userId) => {
     set({ isMessagesLoading: true });
     try {
-      const res = await axiosInstance.get(`/message/${userId}`);
+      const res = await axiosInstance.get(`/message/${userId}?limit=20`);
       const fetchedMessages = res.data.data;
-      
-      // Prevent race conditions
-      if (get().selectedUser?.id === userId) {
-        set({ messages: fetchedMessages });
-      }
       
       // Prevent race conditions: only update if we are still looking at this user
       if (get().selectedUser?.id === userId) {
-        set({ messages: fetchedMessages });
+        set({ 
+          messages: fetchedMessages,
+          hasMoreMessages: fetchedMessages.length === 20
+        });
       }
-      
-      // Mark as read is now handled concurrently by ChatWindow calling markConversationAsRead 
-      // which hits the backend HTTP endpoint, updating DB and emitting to the sender.
     } catch (error) {
       console.log('Error fetching messages:', error);
     } finally {
       if (get().selectedUser?.id === userId) {
         set({ isMessagesLoading: false });
+      }
+    }
+  },
+
+  loadMoreMessages: async (userId) => {
+    const { messages, isMoreMessagesLoading, hasMoreMessages } = get();
+    if (isMoreMessagesLoading || !hasMoreMessages || messages.length === 0) return;
+
+    set({ isMoreMessagesLoading: true });
+    try {
+      const oldestMessageId = messages[0].id;
+      const res = await axiosInstance.get(`/message/${userId}?limit=20&cursor=${oldestMessageId}`);
+      const olderMessages = res.data.data;
+
+      if (get().selectedUser?.id === userId) {
+        set({
+          messages: [...olderMessages, ...get().messages],
+          hasMoreMessages: olderMessages.length === 20
+        });
+      }
+    } catch (error) {
+      console.log('Error loading more messages:', error);
+    } finally {
+      if (get().selectedUser?.id === userId) {
+        set({ isMoreMessagesLoading: false });
       }
     }
   },
@@ -367,7 +397,7 @@ export const useChatStore = create((set, get) => ({
         set((state) => ({
           messages: state.messages.map((m) =>
             m.id === messageId
-              ? { ...m, isDeletedForEveryone: true, text: "🚫 This message was deleted", image: null }
+              ? { ...m, isDeletedForEveryone: true, text: "🚫 This message was deleted", image: null, video: null, audio: null, document: null }
               : m
           ),
         }));
@@ -414,6 +444,20 @@ export const useChatStore = create((set, get) => ({
     } catch (error) {
       console.log('Error forwarding messages:', error);
       return { success: false };
+    }
+  },
+
+  reactToMessage: async (messageId, emoji) => {
+    try {
+      const res = await axiosInstance.post(`/message/${messageId}/react`, { emoji });
+      const updatedMessage = res.data.message;
+      set((state) => ({
+        messages: state.messages.map((msg) =>
+          msg.id === messageId ? { ...msg, reactions: updatedMessage.reactions } : msg
+        )
+      }));
+    } catch (error) {
+      console.log('Error reacting to message:', error);
     }
   },
 

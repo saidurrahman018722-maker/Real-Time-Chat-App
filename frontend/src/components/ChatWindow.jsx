@@ -1,24 +1,54 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useLayoutEffect, useState, useRef } from 'react';
 import { useChatStore } from '../store/useChatStore';
 import { useAuthStore } from '../store/useAuthStore';
-import { Send, Image, MoreVertical, MessageSquare, Check, CheckCheck, ArrowLeft, FileText, UserPlus, Sparkles, Plus, User, X, Search, Star, Copy, Trash, Forward, CheckSquare, Square, Image as ImageIcon, Pin, ChevronDown, Ban, Camera } from 'lucide-react';
+import { Send, Image, MoreVertical, Smile, MessageSquare, Check, CheckCheck, ArrowLeft, FileText, UserPlus, Sparkles, Plus, User, X, Search, Star, Copy, Trash, Forward, CheckSquare, Square, Image as ImageIcon, Pin, ChevronDown, Ban, Camera, Video, File, Play, Mic, Pause, Download, Link } from 'lucide-react';
 import { format } from 'date-fns';
 import ForwardMessageModal from './ForwardMessageModal';
 import BackgroundSelector from './BackgroundSelector';
 import SharedMediaModal from './SharedMediaModal';
 import ContactInfoPage from './ContactInfoPage';
-
+import VoiceMessagePlayer from './VoiceMessagePlayer';
+import ShareContactModal from './ShareContactModal';
+import MessageContextMenu from './MessageContextMenu';
 const ChatWindow = () => {
-  const { contacts, messages, getMessages, sendMessage, deleteMessage, toggleFavoriteContact, selectedUser, setSelectedUser, isMessagesLoading, onlineUsers, socket, setIsAddContactOpen, markConversationAsRead, pendingMessage, togglePinMessage } = useChatStore();
+  const { contacts, messages, getMessages, loadMoreMessages, sendMessage, deleteMessage, reactToMessage, toggleFavoriteContact, selectedUser, setSelectedUser, isMessagesLoading, isMoreMessagesLoading, hasMoreMessages, onlineUsers, socket, setIsAddContactOpen, markConversationAsRead, pendingMessage, togglePinMessage } = useChatStore();
   const { authUser } = useAuthStore();
   const [text, setText] = useState('');
   const [imagePreview, setImagePreview] = useState(null);
+  const [videoPreview, setVideoPreview] = useState(null);
+  const [documentPreview, setDocumentPreview] = useState(null);
+  const [documentName, setDocumentName] = useState('');
+  const [audioPreview, setAudioPreview] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [isRecordingPaused, setIsRecordingPaused] = useState(false);
+  const [audioVolumes, setAudioVolumes] = useState(Array(21).fill(2));
+
+  const videoInputRef = useRef(null);
+  const documentInputRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const recordingTimerRef = useRef(null);
+  const analyserRef = useRef(null);
+  const animationFrameRef = useRef(null);
+  const shouldSendOnStopRef = useRef(false);
+  const isRecordingRef = useRef(false);
+  const isCancelledRef = useRef(false);
   const [chatBg, setChatBg] = useState('bg-base-200');
   const [isTyping, setIsTyping] = useState(false);
   const [remoteTyping, setRemoteTyping] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMessage, setSelectedMessage] = useState(null);
+  const [contextMenu, setContextMenu] = useState(null);
+  const touchTimerRef = useRef(null);
+
+  useEffect(() => {
+    const handleClick = () => setContextMenu(null);
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, []);
+
   const [fullscreenImage, setFullscreenImage] = useState(null);
 
   // Select Mode State
@@ -33,6 +63,7 @@ const ChatWindow = () => {
 
   const [isForwardOpen, setIsForwardOpen] = useState(false);
   const [isSharedMediaOpen, setIsSharedMediaOpen] = useState(false);
+  const [isShareContactOpen, setIsShareContactOpen] = useState(false);
   
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
   const [isConfirmUnblockOpen, setIsConfirmUnblockOpen] = useState(false);
@@ -40,6 +71,7 @@ const ChatWindow = () => {
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const fileInputRef = useRef(null);
+  const scrollContainerRef = useRef(null);
 
   const currentContact = contacts.find(c => c.user?.id === selectedUser?.id || c.userId === selectedUser?.id);
   const isFavorite = currentContact?.isFavorite || false;
@@ -52,12 +84,34 @@ const ChatWindow = () => {
   }, [selectedUser?.id, getMessages, markConversationAsRead]);
 
   const prevMessagesLengthRef = useRef(messages.length);
+  const prevMessagesFirstIdRef = useRef(messages[0]?.id);
+  const prevMessagesLastIdRef = useRef(messages[messages.length - 1]?.id);
+  const previousScrollHeightRef = useRef(0);
 
-  useEffect(() => {
-    if (messages.length !== prevMessagesLengthRef.current) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  useLayoutEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    if (messages.length > 0 && prevMessagesLengthRef.current > 0) {
+      const firstIdChanged = messages[0]?.id !== prevMessagesFirstIdRef.current;
+      const lastIdSame = messages[messages.length - 1]?.id === prevMessagesLastIdRef.current;
+      
+      if (firstIdChanged && lastIdSame) {
+        // Prepended older messages! Maintain scroll position.
+        container.scrollTop = container.scrollHeight - previousScrollHeightRef.current;
+      } else if (messages.length > prevMessagesLengthRef.current) {
+        // Appended new message
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else if (messages.length > 0 && prevMessagesLengthRef.current === 0) {
+      // Initial load
+      messagesEndRef.current?.scrollIntoView();
     }
+    
     prevMessagesLengthRef.current = messages.length;
+    prevMessagesFirstIdRef.current = messages[0]?.id;
+    prevMessagesLastIdRef.current = messages[messages.length - 1]?.id;
+    previousScrollHeightRef.current = container.scrollHeight;
   }, [messages]);
 
   const handleScroll = (e) => {
@@ -67,7 +121,13 @@ const ChatWindow = () => {
     } else {
       setShowScrollButton(false);
     }
+
+    if (scrollTop === 0 && hasMoreMessages && !isMoreMessagesLoading) {
+      loadMoreMessages(selectedUser.id);
+    }
   };
+
+
 
   useEffect(() => {
     const handleBgChange = (e) => {
@@ -109,27 +169,193 @@ const ChatWindow = () => {
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
+    if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onloadend = () => setImagePreview(reader.result);
       reader.readAsDataURL(file);
     }
   };
 
+  const handleVideoChange = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type.startsWith('video/')) {
+      const reader = new FileReader();
+      reader.onloadend = () => setVideoPreview(reader.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDocumentChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setDocumentName(file.name);
+      const reader = new FileReader();
+      reader.onloadend = () => setDocumentPreview(reader.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const updateVisualizer = () => {
+    if (!isRecordingRef.current) return;
+    const { analyser, dataArray } = analyserRef.current;
+    if (analyser && dataArray) {
+      analyser.getByteFrequencyData(dataArray);
+      
+      const step = Math.floor(dataArray.length / 21);
+      const newVolumes = [];
+      for (let i = 0; i < 21; i++) {
+        let sum = 0;
+        for (let j = 0; j < step; j++) {
+          sum += dataArray[i * step + j] || 0;
+        }
+        const avg = sum / (step || 1);
+        const val = 2 + Math.pow(avg / 255, 1.2) * 24; // More dynamic range
+        newVolumes.push(val);
+      }
+      setAudioVolumes(newVolumes);
+    }
+    animationFrameRef.current = requestAnimationFrame(updateVisualizer);
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+      shouldSendOnStopRef.current = false;
+      isRecordingRef.current = true;
+      isCancelledRef.current = false;
+
+      try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const analyser = audioContext.createAnalyser();
+        const source = audioContext.createMediaStreamSource(stream);
+        source.connect(analyser);
+        analyser.fftSize = 64;
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        analyserRef.current = { audioContext, analyser, dataArray, source };
+        updateVisualizer();
+      } catch (err) {
+        console.error('AudioContext setup failed', err);
+      }
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        if (isCancelledRef.current) {
+          stream.getTracks().forEach(track => track.stop());
+          isRecordingRef.current = false;
+          if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+          if (analyserRef.current?.audioContext) analyserRef.current.audioContext.close();
+          return;
+        }
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (shouldSendOnStopRef.current) {
+            sendMessage({
+              receiverId: selectedUser.id,
+              audio: reader.result
+            });
+          } else {
+            setAudioPreview(reader.result);
+          }
+        };
+        reader.readAsDataURL(audioBlob);
+        stream.getTracks().forEach(track => track.stop());
+        
+        isRecordingRef.current = false;
+        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+        if (analyserRef.current?.audioContext) analyserRef.current.audioContext.close();
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setIsRecordingPaused(false);
+      setRecordingDuration(0);
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      alert('Could not access microphone');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      setIsRecordingPaused(false);
+      clearInterval(recordingTimerRef.current);
+    }
+  };
+
+  const pauseResumeRecording = () => {
+    if (!mediaRecorderRef.current) return;
+    
+    if (isRecordingPaused) {
+      mediaRecorderRef.current.resume();
+      setIsRecordingPaused(false);
+      isRecordingRef.current = true;
+      updateVisualizer();
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
+    } else {
+      mediaRecorderRef.current.pause();
+      setIsRecordingPaused(true);
+      isRecordingRef.current = false;
+      clearInterval(recordingTimerRef.current);
+    }
+  };
+
+  const finishAndSendRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      shouldSendOnStopRef.current = true;
+      stopRecording();
+    }
+  };
+
+  const cancelRecording = () => {
+    shouldSendOnStopRef.current = false;
+    isCancelledRef.current = true;
+    stopRecording();
+    setAudioPreview(null);
+  };
+
   const handleSend = (e) => {
     e.preventDefault();
-    if (!text.trim() && !imagePreview) return;
-    sendMessage({ text: text.trim(), image: imagePreview, replyToId: replyingToMessage?.id });
+    if (!text.trim() && !imagePreview && !videoPreview && !documentPreview && !audioPreview) return;
+    sendMessage({ 
+      text: text.trim(), 
+      image: imagePreview, 
+      video: videoPreview, 
+      document: documentPreview, 
+      audio: audioPreview, 
+      replyToId: replyingToMessage?.id 
+    });
     setText('');
     setImagePreview(null);
+    setVideoPreview(null);
+    setDocumentPreview(null);
+    setAudioPreview(null);
+    setDocumentName('');
     setReplyingToMessage(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+    if (videoInputRef.current) videoInputRef.current.value = '';
+    if (documentInputRef.current) documentInputRef.current.value = '';
     setIsTyping(false);
     socket?.emit('typing', { receiverId: selectedUser.id, isTyping: false });
   };
 
   const renderMessageStatus = (msg) => {
-    if (msg.senderId !== authUser.id) return null;
+    if (msg.senderId !== authUser?.id) return null;
 
     if (msg.isRead || msg.status === 'READ') {
       return <CheckCheck size={14} className="text-blue-500 ml-1" />;
@@ -219,7 +445,7 @@ const ChatWindow = () => {
 
   const canDeleteForEveryone = selectedMessageIds.every(id => {
     const msg = messages.find(m => m.id === id);
-    return msg?.senderId === authUser.id;
+    return msg?.senderId === authUser?.id;
   });
 
   const allSelectedPinned = selectedMessageIds.length > 0 && selectedMessageIds.every(id => {
@@ -385,12 +611,17 @@ const ChatWindow = () => {
           {pinnedMessages.map(pinnedMsg => (
             <div key={`pinned-${pinnedMsg.id}`} className="flex items-center justify-between px-6 py-2 border-b border-base-300 last:border-0 hover:bg-base-300/50 transition-colors group">
               <div className="flex items-start gap-3 overflow-hidden cursor-pointer flex-1" onClick={() => {
-                document.getElementById(`message-${pinnedMsg.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                const el = document.getElementById(`message-${pinnedMsg.id}`);
+                if (el) {
+                  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  el.classList.add('animate-pulse');
+                  setTimeout(() => el.classList.remove('animate-pulse'), 2000);
+                }
               }}>
                 <Pin size={14} className="text-primary mt-1 flex-shrink-0 fill-current" />
                 <div className="flex-1 min-w-0">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-primary block truncate">
-                    Pinned {pinnedMsg.senderId === authUser.id ? 'by You' : ''}
+                    Pinned {pinnedMsg.senderId === authUser?.id ? 'by You' : ''}
                   </span>
                   <span className="text-sm text-base-content/80 truncate block">
                     {pinnedMsg.text || (pinnedMsg.image ? '📷 Photo' : 'Message')}
@@ -409,147 +640,318 @@ const ChatWindow = () => {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-4 relative" onScroll={handleScroll}>
-        {isMessagesLoading ? (
-          <div className="text-center text-base-content/60 bg-base-100/50 p-2 rounded-lg inline-block mx-auto">Loading messages...</div>
-        ) : (
-          displayedMessages.map((msg, idx) => {
-            const isMine = msg.senderId === authUser.id;
-            return (
-              <div id={`message-${msg.id}`} key={msg.id || idx} className={`chat ${isMine ? 'chat-end' : 'chat-start'} group items-center`}>
-                {isSelectMode && !isMine && (
-                  <button
-                    className="mr-2 text-base-content/50 hover:text-primary transition-colors"
-                    onClick={() => handleToggleSelectMessage(msg.id)}
-                  >
-                    {selectedMessageIds.includes(msg.id) ? <CheckSquare className="text-primary" size={20} /> : <Square size={20} />}
-                  </button>
-                )}
-
-                <div className="relative group/bubble flex items-center">
-                  {!isMine && !isSelectMode && (
-                    <div className="opacity-0 group-hover/bubble:opacity-100 transition-opacity absolute -right-16 flex gap-1">
-                      <button className="btn btn-ghost btn-xs btn-circle" onClick={() => setReplyingToMessage(msg)} title="Reply">
-                        <MessageSquare size={14} />
-                      </button>
-                    </div>
-                  )}
-
-                  <div
-                    className={`chat-bubble shadow-md relative cursor-pointer hover:opacity-90 transition-opacity ${isMine ? 'chat-bubble-primary text-primary-content' : 'bg-base-100 text-base-content'} ${msg.image && !msg.text ? 'p-1 overflow-hidden' : ''} ${isSelectMode && selectedMessageIds.includes(msg.id) ? 'ring-2 ring-primary ring-offset-2 ring-offset-base-100' : ''}`}
-                    onClick={() => {
-                      if (isSelectMode) {
-                        handleToggleSelectMessage(msg.id);
-                      }
-                    }}
-                    onContextMenu={(e) => {
-                      e.preventDefault();
-                      if (!isSelectMode) {
-                        setSelectedMessage(msg);
-                      }
-                    }}
-                  >
-                    {msg.isPinned && (
-                      <Pin 
-                        size={18} 
-                        className={`absolute top-2 right-2 z-10 rotate-[30deg] drop-shadow-md bg-base-100/30 backdrop-blur-sm rounded-full p-0.5 ${isMine ? 'text-primary-content fill-primary-content/80' : 'text-base-content fill-base-content/80'}`} 
-                      />
-                    )}
-                    {msg.isForwarded && (
-                      <div className="flex items-center gap-1 text-[10px] opacity-70 mb-1 italic">
-                        <Forward size={10} /> Forwarded
-                      </div>
-                    )}
-                    {msg.replyTo && (
-                      <div
-                        className={`text-xs p-2 rounded mb-2 border-l-4 cursor-pointer ${isMine ? 'bg-primary-focus border-base-100/50' : 'bg-base-200 border-primary'}`}
-                        onClick={() => {
-                          // Scroll to message (optional)
-                        }}
-                      >
-                        <span className="font-semibold block opacity-80 mb-0.5">
-                          {msg.replyTo.senderId === authUser.id ? 'You' : currentContact?.alias || selectedUser.name}
-                        </span>
-                        <span className="opacity-70 line-clamp-1">{msg.replyTo.text || 'Photo'}</span>
-                      </div>
-                    )}
-
-                    {msg.image && (
-                      <img 
-                        src={msg.image} 
-                        alt="Attachment" 
-                        className={`max-w-xs rounded-lg hover:brightness-95 transition-all ${msg.text ? 'mb-2' : ''}`} 
-                        onClick={(e) => {
-                          if (!isSelectMode) {
-                            e.stopPropagation();
-                            setFullscreenImage(msg.image);
-                          }
-                        }}
-                      />
-                    )}
-                    {msg.text && <p>{msg.text}</p>}
-                  </div>
-
-                  {isMine && !isSelectMode && (
-                    <div className="opacity-0 group-hover/bubble:opacity-100 transition-opacity absolute -left-16 flex gap-1">
-                      <button className="btn btn-ghost btn-xs btn-circle" onClick={() => setReplyingToMessage(msg)} title="Reply">
-                        <MessageSquare size={14} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {isSelectMode && isMine && (
-                  <button
-                    className="ml-2 text-base-content/50 hover:text-primary transition-colors"
-                    onClick={() => handleToggleSelectMessage(msg.id)}
-                  >
-                    {selectedMessageIds.includes(msg.id) ? <CheckSquare className="text-primary" size={20} /> : <Square size={20} />}
-                  </button>
-                )}
-
-                <div className="chat-footer opacity-70 text-xs mt-1 px-2 py-0.5 rounded-full flex items-center justify-end gap-1">
-                  {msg.createdAt ? format(new Date(msg.createdAt), 'HH:mm') : ''}
-                  {renderMessageStatus(msg)}
-                </div>
-              </div>
-            );
-          })
-        )}
-
-        {pendingMessage && pendingMessage.receiverId === selectedUser.id && (
-          <div className="chat chat-end group items-center animate-fade-in">
-            <div className="chat-bubble shadow-md relative chat-bubble-primary text-primary-content opacity-80">
-              {pendingMessage.image && (
-                <div className="relative">
-                  <img src={pendingMessage.image} alt="Uploading" className="max-w-xs rounded-lg mb-2 blur-[2px]" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="loading loading-spinner loading-md text-base-100"></span>
-                  </div>
+      <div className="flex-1 overflow-y-auto p-6 space-y-4 relative" onScroll={handleScroll} ref={scrollContainerRef}>
+          {isMessagesLoading ? (
+            <div className="text-center text-base-content/60 bg-base-100/50 p-2 rounded-lg inline-block mx-auto">Loading messages...</div>
+          ) : (
+            <>
+              {isMoreMessagesLoading && (
+                <div className="flex justify-center py-4">
+                  <span className="loading loading-spinner loading-sm text-primary"></span>
                 </div>
               )}
-              {pendingMessage.text && <p>{pendingMessage.text}</p>}
+              {displayedMessages.map((msg, idx) => {
+              const isMine = msg.senderId === authUser?.id;
+              return (
+                <div id={`message-${msg.id}`} key={msg.id || idx} className={`chat ${isMine ? 'chat-end' : 'chat-start'} group items-center`}>
+                  {isSelectMode && !isMine && (
+                    <button
+                      className="mr-2 text-base-content/50 hover:text-primary transition-colors"
+                      onClick={() => handleToggleSelectMessage(msg.id)}
+                    >
+                      {selectedMessageIds.includes(msg.id) ? <CheckSquare className="text-primary" size={20} /> : <Square size={20} />}
+                    </button>
+                  )}
+
+                  <div className="relative group/bubble flex items-center">
+                    {!isMine && !isSelectMode && (
+                      <div className="opacity-0 group-hover/bubble:opacity-100 transition-opacity absolute -right-8 flex gap-1 z-10">
+                        <button className="btn btn-ghost btn-xs btn-circle bg-base-100 shadow-sm" onClick={(e) => {
+                          e.stopPropagation();
+                          setContextMenu({
+                            x: e.clientX,
+                            y: e.clientY,
+                            message: msg,
+                            isMine
+                          });
+                        }} title="Menu">
+                          <ChevronDown size={14} />
+                        </button>
+                      </div>
+                    )}
+                    <div
+                      className={`chat-bubble shadow-md relative cursor-pointer hover:opacity-90 transition-opacity ${isMine ? 'chat-bubble-primary text-primary-content' : 'bg-base-100 text-base-content'} ${msg.image && !msg.text ? 'p-1 overflow-hidden' : ''} ${msg.audio ? 'min-w-[250px]' : ''} ${isSelectMode && selectedMessageIds.includes(msg.id) ? 'ring-2 ring-primary ring-offset-2 ring-offset-base-100' : ''} ${msg.reactions && msg.reactions.length > 0 ? 'mb-4' : ''}`}
+                      onClick={(e) => {
+                        if (isSelectMode) {
+                          handleToggleSelectMessage(msg.id);
+                        } else {
+                          setContextMenu({
+                            x: e.clientX,
+                            y: e.clientY,
+                            message: msg,
+                            isMine
+                          });
+                        }
+                      }}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        if (!isSelectMode) {
+                          setContextMenu({
+                            x: e.clientX,
+                            y: e.clientY,
+                            message: msg,
+                            isMine
+                          });
+                        }
+                      }}
+                      onTouchStart={(e) => {
+                        if (!isSelectMode) {
+                          const touch = e.touches[0];
+                          touchTimerRef.current = setTimeout(() => {
+                            setContextMenu({
+                              x: touch.clientX,
+                              y: touch.clientY,
+                              message: msg,
+                              isMine
+                            });
+                          }, 500);
+                        }
+                      }}
+                      onTouchEnd={() => {
+                        if (touchTimerRef.current) clearTimeout(touchTimerRef.current);
+                      }}
+                      onTouchMove={() => {
+                        if (touchTimerRef.current) clearTimeout(touchTimerRef.current);
+                      }}
+                    >
+                      {msg.isPinned && (
+                        <Pin 
+                          size={18} 
+                          className={`absolute top-2 right-2 z-10 rotate-[30deg] drop-shadow-md bg-base-100/30 backdrop-blur-sm rounded-full p-0.5 ${isMine ? 'text-primary-content fill-primary-content/80' : 'text-base-content fill-base-content/80'}`} 
+                        />
+                      )}
+                      {msg.isForwarded && (
+                        <div className="flex items-center gap-1 text-[10px] opacity-70 mb-1 italic">
+                          <Forward size={10} /> Forwarded
+                        </div>
+                      )}
+                      {msg.replyTo && (
+                        <div
+                          className={`text-xs p-2 rounded mb-2 border-l-4 cursor-pointer hover:brightness-95 transition-all ${isMine ? 'bg-black/10 border-base-100/50' : 'bg-base-200 border-primary'}`}
+                          onClick={() => {
+                            const el = document.getElementById(`message-${msg.replyTo.id}`);
+                            if (el) {
+                              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                              el.classList.add('animate-pulse');
+                              setTimeout(() => el.classList.remove('animate-pulse'), 2000);
+                            }
+                          }}
+                        >
+                          <span className="font-semibold block opacity-80 mb-0.5">
+                            {msg.replyTo.senderId === authUser?.id ? 'You' : currentContact?.alias || selectedUser.name}
+                          </span>
+                          <span className="opacity-70 line-clamp-1">{msg.replyTo.text || 'Photo'}</span>
+                        </div>
+                      )}
+
+                      {!msg.isDeletedForEveryone && msg.image && (
+                        <img 
+                          src={msg.image} 
+                          alt="Attachment" 
+                          className={`max-w-xs rounded-lg hover:brightness-95 transition-all ${msg.text ? 'mb-2' : ''}`} 
+                          onClick={(e) => {
+                            if (!isSelectMode) {
+                              e.stopPropagation();
+                              setFullscreenImage(msg.image);
+                            }
+                          }}
+                        />
+                      )}
+                      {!msg.isDeletedForEveryone && msg.video && (
+                        <video 
+                          src={msg.video} 
+                          controls
+                          className={`max-w-xs rounded-lg ${msg.text ? 'mb-2' : ''}`}
+                        />
+                      )}
+                      {!msg.isDeletedForEveryone && msg.audio && (
+                        <div className={msg.text ? 'mb-2' : ''}>
+                          <VoiceMessagePlayer src={msg.audio} isMine={isMine} />
+                        </div>
+                      )}
+                      {!msg.isDeletedForEveryone && msg.document && (
+                        <a 
+                          href={msg.document} 
+                          target="_blank" rel="noreferrer"
+                          className={`flex items-center gap-3 p-3 bg-base-300 rounded-lg hover:bg-base-300/80 transition-colors ${msg.text ? 'mb-2' : ''}`}
+                        >
+                          <div className="w-10 h-10 bg-primary/20 text-primary rounded-lg flex items-center justify-center">
+                            <FileText size={20} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">Document</p>
+                            <p className="text-xs text-base-content/60">Click to view/download</p>
+                          </div>
+                        </a>
+                      )}
+                      {msg.sharedContact && (
+                        <div className="flex flex-col gap-2 p-2 bg-base-100/10 rounded-lg min-w-[200px]">
+                          <div className="flex items-center gap-3 border-b border-base-content/10 pb-2">
+                            <div className="avatar">
+                              <div className="w-10 h-10 rounded-full bg-base-300 overflow-hidden flex items-center justify-center">
+                                {msg.sharedContact.profilePic ? (
+                                  <img src={msg.sharedContact.profilePic} alt={msg.sharedContact.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  <User size={20} className="text-base-content/50" />
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex-1 font-semibold text-sm">
+                              {msg.sharedContact.name}
+                            </div>
+                          </div>
+                          <button 
+                            className="btn btn-sm btn-ghost w-full"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const contact = contacts.find(c => c.user?.id === msg.sharedContact.id);
+                              if (contact) {
+                                setSelectedUser(contact.user);
+                              } else {
+                                setSelectedUser(msg.sharedContact);
+                              }
+                            }}
+                          >
+                            Message
+                          </button>
+                        </div>
+                      )}
+                      {msg.text && <p>{msg.text}</p>}
+                      {msg.reactions && msg.reactions.length > 0 && (
+                        <div className={`absolute -bottom-3.5 ${isMine ? 'right-2' : 'left-2'} flex flex-wrap gap-1 z-20`}>
+                          {Array.from(new Set(msg.reactions.map(r => r.emoji))).map(emoji => {
+                            const count = msg.reactions.filter(r => r.emoji === emoji).length;
+                            const reactedByMe = msg.reactions.some(r => r.emoji === emoji && r.userId === authUser?.id);
+                            return (
+                              <div
+                                key={emoji}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  reactToMessage(msg.id, emoji);
+                                }}
+                                className={`text-[13px] px-1.5 py-0.5 rounded-full flex items-center gap-1 cursor-pointer select-none border-2 border-base-100 shadow-sm leading-none ${reactedByMe ? 'bg-primary/20 text-primary' : 'bg-base-300 text-base-content'}`}
+                              >
+                                <span>{emoji}</span>
+                                {count > 1 && <span className="opacity-70 font-semibold">{count}</span>}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {isMine && !isSelectMode && (
+                      <div className="opacity-0 group-hover/bubble:opacity-100 transition-opacity absolute -left-8 flex gap-1 z-10">
+                        <button className="btn btn-ghost btn-xs btn-circle bg-base-100 shadow-sm" onClick={(e) => {
+                          e.stopPropagation();
+                          setContextMenu({
+                            x: e.clientX,
+                            y: e.clientY,
+                            message: msg,
+                            isMine
+                          });
+                        }} title="Menu">
+                          <ChevronDown size={14} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {isSelectMode && isMine && (
+                    <button
+                      className="ml-2 text-base-content/50 hover:text-primary transition-colors"
+                      onClick={() => handleToggleSelectMessage(msg.id)}
+                    >
+                      {selectedMessageIds.includes(msg.id) ? <CheckSquare className="text-primary" size={20} /> : <Square size={20} />}
+                    </button>
+                  )}
+
+                  <div className="chat-footer opacity-70 text-xs mt-1 px-2 py-0.5 rounded-full flex items-center justify-end gap-1">
+                    {msg.createdAt ? format(new Date(msg.createdAt), 'HH:mm') : ''}
+                    {renderMessageStatus(msg)}
+                  </div>
+                </div>
+              );
+            })}
+            </>
+          )}
+
+          {pendingMessage && pendingMessage.receiverId === selectedUser.id && (
+            <div className="chat chat-end group items-center animate-fade-in">
+              <div className="chat-bubble shadow-md relative chat-bubble-primary text-primary-content opacity-80">
+                {pendingMessage.image && (
+                  <div className="relative">
+                    <img src={pendingMessage.image} alt="Uploading" className="max-w-xs rounded-lg mb-2 blur-[2px]" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="loading loading-spinner loading-md text-base-100"></span>
+                    </div>
+                  </div>
+                )}
+                {pendingMessage.video && (
+                  <div className="relative">
+                    <video src={pendingMessage.video} className="max-w-xs rounded-lg mb-2 blur-[2px]" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="loading loading-spinner loading-md text-base-100"></span>
+                    </div>
+                  </div>
+                )}
+                {pendingMessage.document && (
+                  <div className="flex items-center gap-3 p-3 bg-base-300 rounded-lg opacity-50 mb-2">
+                    <FileText size={20} /> Document uploading...
+                  </div>
+                )}
+                {pendingMessage.audio && (
+                  <div className="flex items-center gap-3 p-3 bg-base-300 rounded-lg opacity-50 mb-2">
+                    <Mic size={20} /> Voice sending...
+                  </div>
+                )}
+                {pendingMessage.text && <p>{pendingMessage.text}</p>}
+              </div>
+              <div className="chat-footer opacity-50 text-xs mt-1 flex items-center justify-end">
+                sending...
+              </div>
             </div>
-            <div className="chat-footer opacity-50 text-xs mt-1 flex items-center justify-end">
-              sending...
-            </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
+          )}
+          {/* Invisible element to scroll to bottom */}
+          <div ref={messagesEndRef} />
       </div>
 
-      {imagePreview && (
-        <div className="px-4 py-2 bg-base-200 border-t border-base-300 relative">
-          <div className="relative inline-block">
-            <img src={imagePreview} alt="Preview" className="h-24 rounded-lg shadow-sm border border-base-300" />
-            <button
-              type="button"
-              onClick={() => setImagePreview(null)}
-              className="absolute -top-2 -right-2 btn btn-xs btn-circle btn-error shadow-md"
-            >
-              <X size={12} />
-            </button>
+      {(imagePreview || videoPreview || documentPreview || audioPreview) && (
+        <div className="px-4 py-3 bg-base-200 border-t border-base-300 relative flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {imagePreview && <img src={imagePreview} alt="Preview" className="w-12 h-12 object-cover rounded-lg border border-base-300" />}
+            {videoPreview && <video src={videoPreview} className="w-16 h-12 object-cover rounded-lg border border-base-300" />}
+            {documentPreview && <div className="w-12 h-12 bg-base-300 rounded-lg flex items-center justify-center"><FileText size={24} /></div>}
+            {audioPreview && <div className="flex items-center gap-2 bg-base-300 p-2 rounded-lg"><Play size={20} className="text-primary" /><div className="w-24 h-1 bg-primary/20 rounded-full"><div className="w-full h-full bg-primary rounded-full"></div></div></div>}
+            <div className="text-sm font-medium">
+              {imagePreview && 'Image attached'}
+              {videoPreview && 'Video attached'}
+              {documentPreview && documentName}
+              {audioPreview && 'Voice message'}
+            </div>
           </div>
+          <button onClick={() => {
+            setImagePreview(null);
+            setVideoPreview(null);
+            setDocumentPreview(null);
+            setAudioPreview(null);
+            setDocumentName('');
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            if (videoInputRef.current) videoInputRef.current.value = '';
+            if (documentInputRef.current) documentInputRef.current.value = '';
+          }} className="btn btn-ghost btn-sm btn-circle hover:bg-error/20 hover:text-error transition-colors">
+            <X size={16} />
+          </button>
         </div>
       )}
 
@@ -557,9 +959,15 @@ const ChatWindow = () => {
         <div className="px-4 py-2 bg-base-200 border-t border-base-300 relative flex items-center justify-between">
           <div className="flex-1 border-l-4 border-primary pl-3">
             <span className="font-semibold text-xs text-primary block mb-0.5">
-              Replying to {replyingToMessage.senderId === authUser.id ? 'yourself' : selectedUser.name}
+              Replying to {replyingToMessage.senderId === authUser?.id ? 'yourself' : selectedUser.name}
             </span>
-            <span className="text-sm text-base-content/70 line-clamp-1">{replyingToMessage.text || 'Photo'}</span>
+            <span className="text-sm text-base-content/70 line-clamp-1">
+              {replyingToMessage.text || 
+                (replyingToMessage.audio ? 'Voice Message' : 
+                 replyingToMessage.video ? 'Video' : 
+                 replyingToMessage.document ? 'Document' : 
+                 replyingToMessage.image ? 'Photo' : 'Media')}
+            </span>
           </div>
           <button onClick={() => setReplyingToMessage(null)} className="btn btn-ghost btn-sm btn-circle text-base-content/50 hover:text-base-content">
             <X size={16} />
@@ -591,49 +999,62 @@ const ChatWindow = () => {
           </div>
         ) : (
           <form onSubmit={handleSend} className="p-4 bg-base-100/90 backdrop-blur-md border-t border-base-300 flex items-center gap-2">
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              ref={fileInputRef}
-              onChange={handleImageChange}
-            />
-            <div className="dropdown dropdown-top dropdown-hover">
-              <div
-                tabIndex={0}
-                role="button"
-                className="btn btn-ghost btn-circle text-base-content/60 hover:text-base-content"
-              >
+            <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleImageChange} />
+            <input type="file" accept="video/*" className="hidden" ref={videoInputRef} onChange={handleVideoChange} />
+            <input type="file" accept=".pdf,.doc,.docx,.txt" className="hidden" ref={documentInputRef} onChange={handleDocumentChange} />
+            
+            <div className="dropdown dropdown-top">
+              <div tabIndex={0} role="button" className="btn btn-ghost btn-circle text-base-content/60 hover:text-base-content">
                 <Plus size={22} />
               </div>
               <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-40 mb-2 border border-base-300">
-                <li>
-                  <a onClick={() => {
-                    fileInputRef.current?.click();
-                    document.activeElement?.blur();
-                  }}>
-                    <Image size={18} /> Image
-                  </a>
-                </li>
-                <li>
-                  <a onClick={() => {
-                    document.activeElement?.blur();
-                  }}>
-                    <FileText size={18} /> Document
-                  </a>
-                </li>
+                <li><a onClick={() => { fileInputRef.current?.click(); document.activeElement?.blur(); }}><Image size={18} /> Image</a></li>
+                <li><a onClick={() => { videoInputRef.current?.click(); document.activeElement?.blur(); }}><Video size={18} /> Video</a></li>
+                <li><a onClick={() => { documentInputRef.current?.click(); document.activeElement?.blur(); }}><File size={18} /> Document</a></li>
+                <li><a onClick={() => { setIsShareContactOpen(true); document.activeElement?.blur(); }}><User size={18} /> Contact</a></li>
               </ul>
             </div>
-            <input
-              type="text"
-              placeholder="Type a message..."
-              className="input input-bordered flex-1 rounded-full bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary/50 border-none px-6"
-              value={text}
-              onChange={handleTyping}
-            />
-            <button type="submit" className="btn btn-primary btn-circle shadow-md" disabled={!text.trim() && !imagePreview}>
-              <Send size={20} />
-            </button>
+            
+            {isRecording ? (
+              <div className="flex-1 flex items-center bg-base-200 rounded-full px-4 py-2 relative overflow-hidden">
+                <button type="button" onClick={cancelRecording} className="btn btn-ghost btn-circle btn-sm text-base-content/60 hover:text-error mr-2 z-10">
+                  <Trash size={20} />
+                </button>
+                <div className="flex items-center gap-2 z-10">
+                  <div className={`w-2.5 h-2.5 rounded-full bg-error ${isRecordingPaused ? '' : 'animate-pulse'}`} />
+                  <span className="font-mono text-sm w-10">{Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}</span>
+                </div>
+                
+                {/* Real animated waveform */}
+                <div className="flex-1 flex items-center justify-center gap-[2px] mx-2 h-6 opacity-60 z-10">
+                  {audioVolumes.map((val, i) => (
+                    <div key={i} className="w-1 bg-base-content rounded-full" style={{ height: `${val}px` }} />
+                  ))}
+                </div>
+
+                <button type="button" onClick={pauseResumeRecording} className="btn btn-ghost btn-circle btn-sm text-base-content/60 hover:text-primary z-10">
+                  {isRecordingPaused ? <Play size={20} /> : <Pause size={20} />}
+                </button>
+              </div>
+            ) : (
+              <input type="text" placeholder="Type a message..." className="input input-bordered flex-1 rounded-full bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary/50 border-none px-6" value={text} onChange={handleTyping} />
+            )}
+            
+            {!text.trim() && !imagePreview && !videoPreview && !documentPreview && !audioPreview ? (
+              isRecording ? (
+                <button type="button" onClick={finishAndSendRecording} className="btn bg-[#00a884] hover:bg-[#008f6f] border-none btn-circle shadow-md text-white">
+                  <Send size={20} />
+                </button>
+              ) : (
+                <button type="button" onClick={startRecording} className="btn btn-ghost btn-circle text-base-content/60 hover:text-base-content">
+                  <Mic size={22} />
+                </button>
+              )
+            ) : (
+              <button type="submit" className="btn btn-primary btn-circle shadow-md">
+                <Send size={20} />
+              </button>
+            )}
           </form>
         )}
 
@@ -721,7 +1142,7 @@ const ChatWindow = () => {
                   <Trash size={18} /> Delete for me
                 </button>
               </li>
-              {selectedMessage.senderId === authUser.id && (
+              {selectedMessage.senderId === authUser?.id && (
                 <li>
                   <button
                     className="text-error"
@@ -760,6 +1181,15 @@ const ChatWindow = () => {
           messageIds={isSelectMode ? selectedMessageIds : (selectedMessage ? [selectedMessage.id] : [])}
         />
       )}
+
+      {/* Share Contact Modal */}
+      <ShareContactModal
+        isOpen={isShareContactOpen}
+        onClose={() => setIsShareContactOpen(false)}
+        onShare={async (sharedContactId) => {
+          await sendMessage({ sharedContactId });
+        }}
+      />
 
       {/* Multi Delete Modal */}
       {isMultiDeleteOpen && (
@@ -826,6 +1256,38 @@ const ChatWindow = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {contextMenu && (
+        <MessageContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          message={contextMenu.message}
+          isMine={contextMenu.isMine}
+          onClose={() => setContextMenu(null)}
+          onReact={(emoji) => reactToMessage(contextMenu.message.id, emoji)}
+          onCopyText={() => navigator.clipboard.writeText(contextMenu.message.text)}
+          onCopyMediaLink={(url) => navigator.clipboard.writeText(url)}
+          onDownloadMedia={(url) => {
+            const a = document.createElement('a');
+            a.href = url;
+            a.target = '_blank';
+            a.download = true;
+            a.click();
+          }}
+          onPin={() => togglePinMessage(contextMenu.message.id)}
+          onReply={() => setReplyingToMessage(contextMenu.message)}
+          onForward={() => {
+            setSelectedMessage(contextMenu.message);
+            setIsForwardOpen(true);
+          }}
+          onSelect={() => {
+            setIsSelectMode(true);
+            setSelectedMessageIds([contextMenu.message.id]);
+          }}
+          onDeleteMe={() => deleteMessage(contextMenu.message.id, false)}
+          onDeleteEveryone={() => deleteMessage(contextMenu.message.id, true)}
+        />
       )}
 
       {isConfirmUnblockOpen && (
